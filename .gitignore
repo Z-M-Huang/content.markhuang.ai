@@ -1,0 +1,21 @@
+# Tool/IDE configs
+.claude
+.vcp
+.idea
+.vscode
+.mcp.json
+
+# Sandbox artifacts (0-byte stubs created by Claude Code sandbox)
+.bash_profile
+.bashrc
+.gitconfig
+.gitmodules
+.profile
+.ripgreprc
+.zprofile
+.zshrc
+HEAD
+config
+hooks
+objects
+refs
