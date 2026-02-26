@@ -1,0 +1,68 @@
+Google dropped Nano Banana 2 today — their latest AI image generation model, officially called Gemini 3.1 Flash Image. I've been using Nano Banana since the original version for generating avatars, desktop backgrounds, and random creative stuff, so I had to take a closer look at what changed and what it actually means.
+
+Faster, cheaper, more features. But is it actually *better*? Or is this Google optimizing for scale and cost while marketing it as an upgrade?
+
+## The Naming Is Still Fun
+
+Quick aside on the naming — Nano Banana. Nano Banana Pro. Nano Banana 2. Some people say Google's naming is chaotic, but I think it's fun actually. Every other AI company picks some serious-sounding version number. Google goes with "Nano Banana" and you remember it. It has personality.
+
+## What Actually Changed
+
+Here's the model lineage to put things in context:
+
+| Model | Architecture | Released | Max Resolution | Speed |
+|-------|-------------|----------|---------------|-------|
+| Nano Banana v1 | Gemini 2.5 Flash | Aug 2025 | 1K | ~3 seconds |
+| Nano Banana Pro | Gemini 3 Pro | Nov 2025 | 4K | 8-12 seconds |
+| **Nano Banana 2** | **Gemini 3.1 Flash** | **Feb 26, 2026** | **4K** | **"Extremely fast"** |
+
+The headline features:
+
+- **4K resolution support** (512px up to 4096x4096) — massive jump from v1's 1K limit
+- **Subject consistency** across up to 5 characters and 14 objects — you can maintain the same character across multiple generations
+- **~90% text rendering accuracy** — up from about 80% in v1, though still slightly below Pro's 94%
+- **Self-review and self-correction** — the model checks its own output before returning it to you
+- **Real-time web grounding** — uses live web data for more accurate subject rendering
+- **Pro-only features now included** — data visualization, infographics, diagrams, marketing mockups
+
+API pricing sits at roughly $0.067 per image — about 50% cheaper than Nano Banana Pro. For me personally, I'm on the AI Pro yearly subscription, so per-image cost is not something I think about day to day.
+
+## Flash vs Pro — The Architecture Question
+
+Nano Banana Pro ran on **Gemini 3 Pro** — the quality-first model. Nano Banana 2 runs on **Gemini 3.1 Flash** — the speed-optimized tier.
+
+Worth noting: Google shipped Gemini 3.1 Pro on February 19th, just a week before this release. As of today, 3.1 Pro is the most advanced Gemini model available. But for their default image generation model, they went with Flash.
+
+The reasoning is probably straightforward. Flash is built for throughput. When your image generation model is the default across the Gemini app in 141 countries, plus Google Search, Lens, and AI Mode — you need something that can handle that volume without melting your infrastructure. Pro-tier compute for all of that would be either prohibitively expensive or too slow to serve at scale.
+
+I get the engineering rationale. But I would rather wait 10 seconds and get a better image than get a mediocre one in 2 seconds. Google does still offer Nano Banana Pro access for AI Pro/Ultra subscribers through a three-dot menu regeneration option. But that feels buried — a workaround, not a first-class choice. If you're charging premium subscription prices, give users a clear toggle: "fast" or "quality." Don't hide the better model behind a menu.
+
+## What I'm Actually Excited About
+
+The subject consistency feature is what caught my eye the most. Maintaining character resemblance across multiple images opens up use cases that weren't practical before. Manga-style content, for example — where you need the same characters appearing consistently across panels. That requires a kind of "visual context window" that previous versions couldn't handle.
+
+The 4K resolution bump is also significant. Going from 1K to 4K is not incremental — it's the difference between "good enough for a social post" and "actually usable for real production work." Combined with the text rendering improvements (90% is genuinely impressive for AI-generated text in images), this starts to look like a tool for serious creative work, not just playing around.
+
+## The Self-Review Pipeline
+
+Nano Banana 2 includes a self-review and self-correction mechanism — the model evaluates its own output and fixes issues before returning it. Third-party analysis suggests this involves multiple internal steps (planning, generation, review, correction), though Google hasn't published the exact pipeline details.
+
+This is interesting from an engineering perspective. Building quality control into the generation loop means fewer garbage outputs reaching users. But it also raises a question: if Flash-tier architecture needs self-correction to maintain quality, does that confirm it can't match Pro-level results on its own? The self-correction pipeline might be how Google closes the quality gap without paying for Pro compute — a smart cost optimization, but also an indirect acknowledgment that Flash alone isn't enough.
+
+## Real Upgrade or Profitability Play?
+
+Compared to Nano Banana v1 — absolutely an upgrade. 4K resolution, subject consistency, better text rendering, more capabilities. No argument there.
+
+Compared to Nano Banana Pro — that's where it gets complicated. You get Pro-level *features* at Flash speed and 50% lower cost. But the underlying architecture shifted from quality-optimized (Pro) to speed-optimized (Flash). The self-correction pipeline tries to bridge that gap. Whether it fully does is the open question.
+
+Here's what I think is really going on: Google needs image generation to scale across 141 countries, across Search, Lens, and the Gemini app. Pro-tier compute at that scale does not work economically. So they built a Flash-based model, added self-correction to get quality close enough, and called it an upgrade. For most users, it probably is. The features are real, the speed is real, and the price is right.
+
+But I'd push back on "better" as a blanket statement. It's better for Google's margins. It's better for casual users who want fast results. For users who specifically care about maximum image quality and are willing to pay and wait — which is me — the move from Pro to Flash architecture is a trade-off, not a straight upgrade.
+
+I'll keep using it. The subject consistency feature alone opens up use cases I care about — manga-style content where characters need to stay consistent across panels. If that works as advertised, this release is worth it regardless of the architecture debate.
+
+But I'd like Google to stop hiding Nano Banana Pro behind a three-dot menu and give paying users a real quality toggle.
+
+<Callout variant="info">
+Nano Banana 2 is available now in the Gemini app and in preview for developers via AI Studio, Gemini API, Vertex AI, and Gemini CLI.
+</Callout>

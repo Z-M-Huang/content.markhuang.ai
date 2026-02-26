@@ -23,6 +23,18 @@
       "published": true,
       "image": null,
       "readTime": "10 min read"
+    },
+    {
+      "slug": "nano-banana-2-fast-cheap-but-better",
+      "title": "Nano Banana 2 Is Fast and Cheap, But Is It Better?",
+      "description": "Google's Nano Banana 2 brings 4K resolution, subject consistency, and Pro-level features at Flash speed — but choosing Gemini 3.1 Flash over Pro raises questions about whether this is a quality upgrade or a cost optimization play.",
+      "date": "2026-02-26",
+      "category": "ai-llms",
+      "categoryLabel": "AI & LLMs",
+      "tags": ["google", "gemini", "image-generation", "nano-banana", "ai-models"],
+      "published": true,
+      "image": null,
+      "readTime": "5 min read"
     }
   ]
 }
