@@ -1,0 +1,498 @@
+One AI writing and reviewing its own code is like grading your own homework. Different models miss different things, and self-review tends to confirm assumptions rather than challenge them. Research backs this up — single-model workflows produce code with a **2.74x higher vulnerability rate** (CodeRabbit 2025) and **45% of AI-generated code contains security flaws** (Veracode 2025).
+
+[Dev Buddy](https://github.com/Z-M-Huang/vcp) is an open-source Claude Code plugin that solves this by orchestrating **multiple AI models through structured pipelines** — requirements gathering, planning, implementation, and code reviews, each performed by different models with independent perspectives. It's part of the [VCP (Vibe Coding Protocol)](https://github.com/Z-M-Huang/vcp) project and builds on VCP's standards enforcement with multi-AI pipeline orchestration.
+
+This tutorial walks through installing Dev Buddy, configuring pipelines, and running both feature development and bug fix workflows with real output examples.
+
+## What Dev Buddy Does
+
+Dev Buddy orchestrates AI models through task-based pipelines where **no phase can be skipped** — dependencies are enforced through data constraints, not instructions.
+
+```text
+Feature Pipeline:
+  Requirements → Planning → Plan Reviews → Implementation → Code Reviews
+       ↑              ↑           ↑              ↑              ↑
+   5 specialists    architect   sonnet/opus    implementer   sonnet/opus
+   explore in       designs     review the     writes code   review the
+   parallel         approach    plan                         implementation
+```
+
+Two pipelines are available:
+
+| Pipeline | Command | Stages |
+|----------|---------|--------|
+| **Feature Development** | `/dev-buddy-feature-implement` | Requirements → Planning → Plan Reviews → Implementation → Code Reviews |
+| **Bug Fix** | `/dev-buddy-bug-fix` | Root Cause Analysis → Consolidation → Plan Validation → Implementation → Code Reviews |
+
+Each stage can use a different AI model or provider. Reviews that fail create automatic fix + re-review tasks — the loop continues until all reviewers approve.
+
+## Prerequisites
+
+- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) (CLI)
+- [Bun](https://bun.sh/) runtime
+- [VCP plugin](/blog/vcp-enforce-code-standards-with-claude-code) installed (Dev Buddy builds on VCP's standards)
+
+For team-based requirements gathering (5 parallel specialists), set this environment variable:
+
+```bash
+export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
+```
+
+## Step 1: Install Dev Buddy
+
+If you haven't already added the VCP marketplace:
+
+```bash
+/plugin marketplace add Z-M-Huang/vcp
+```
+
+Install both plugins:
+
+```bash
+/plugin install vcp@vcp
+/plugin install vcp@dev-buddy
+```
+
+Then initialize your project if you haven't already:
+
+```bash
+/vcp-init
+```
+
+## Step 2: Understand the Default Pipeline
+
+Dev Buddy ships with a default pipeline configuration. You can view it by checking `~/.vcp/dev-buddy.json` after first run, or start with the defaults:
+
+```json
+{
+  "feature_pipeline": [
+    { "type": "requirements", "provider": "anthropic-subscription", "model": "opus" },
+    { "type": "planning", "provider": "anthropic-subscription", "model": "opus" },
+    { "type": "plan-review", "provider": "anthropic-subscription", "model": "sonnet" },
+    { "type": "plan-review", "provider": "anthropic-subscription", "model": "opus" },
+    { "type": "plan-review", "provider": "anthropic-subscription", "model": "sonnet" },
+    { "type": "implementation", "provider": "anthropic-subscription", "model": "sonnet" },
+    { "type": "code-review", "provider": "anthropic-subscription", "model": "sonnet" },
+    { "type": "code-review", "provider": "anthropic-subscription", "model": "opus" },
+    { "type": "code-review", "provider": "anthropic-subscription", "model": "sonnet" }
+  ],
+  "bugfix_pipeline": [
+    { "type": "rca", "provider": "anthropic-subscription", "model": "sonnet" },
+    { "type": "rca", "provider": "anthropic-subscription", "model": "opus" },
+    { "type": "plan-review", "provider": "anthropic-subscription", "model": "sonnet" },
+    { "type": "implementation", "provider": "anthropic-subscription", "model": "sonnet" },
+    { "type": "code-review", "provider": "anthropic-subscription", "model": "sonnet" },
+    { "type": "code-review", "provider": "anthropic-subscription", "model": "opus" },
+    { "type": "code-review", "provider": "anthropic-subscription", "model": "sonnet" }
+  ]
+}
+```
+
+Each entry specifies:
+- **type** — The pipeline stage (`requirements`, `planning`, `plan-review`, `implementation`, `code-review`, `rca`)
+- **provider** — Which AI provider to use
+- **model** — Which model from that provider
+
+The number of entries determines the number of pipeline tasks. Add more `plan-review` or `code-review` entries for more review rounds. Remove entries to shorten the pipeline.
+
+## Step 3: Run Your First Feature Pipeline
+
+Start a feature development pipeline:
+
+```bash
+/dev-buddy-feature-implement Add rate limiting to the /api/login endpoint
+```
+
+### Phase 1: Requirements Gathering (Team-Based)
+
+Dev Buddy spawns 5 specialist teammates who explore your codebase in parallel:
+
+```text
+Pipeline: pipeline-myproject-a1b2c3
+Team created with 5 specialists:
+
+  Technical Analyst    → Exploring codebase structure, dependencies, existing patterns
+  UX/Domain Analyst    → Analyzing user workflows, best practices, accessibility
+  Security Analyst     → Threat modeling, OWASP analysis, VCP standards check
+  Performance Analyst  → Load analysis, scalability, resource constraints
+  Architecture Analyst → Design patterns, SOLID principles, maintainability
+
+Specialists exploring... (this takes 1-2 minutes)
+```
+
+Each specialist writes an analysis file:
+
+| Specialist | Output |
+|-----------|--------|
+| Technical Analyst | `.vcp/task/analysis-technical.json` |
+| UX/Domain Analyst | `.vcp/task/analysis-ux-domain.json` |
+| Security Analyst | `.vcp/task/analysis-security.json` |
+| Performance Analyst | `.vcp/task/analysis-performance.json` |
+| Architecture Analyst | `.vcp/task/analysis-architecture.json` |
+
+The lead may ask you clarifying questions informed by the specialist findings. After all specialists complete, a requirements-gatherer agent synthesizes everything into `.vcp/task/user-story.json`:
+
+```json
+{
+  "id": "story-20260225-143022",
+  "title": "Add Rate Limiting to Login Endpoint",
+  "requirements": {
+    "functional": [
+      "Limit /api/login to 5 attempts per IP per 15-minute window",
+      "Return 429 Too Many Requests with Retry-After header",
+      "Reset counter on successful authentication"
+    ],
+    "non_functional": [
+      "Rate limit state must survive server restarts (Redis/database)",
+      "Sub-millisecond overhead per request"
+    ]
+  },
+  "acceptance_criteria": [
+    "AC-1: 6th login attempt within 15 minutes returns 429",
+    "AC-2: Retry-After header contains seconds until window reset",
+    "AC-3: Successful login resets the attempt counter",
+    "AC-4: Rate limit state persists across server restarts"
+  ]
+}
+```
+
+<Callout variant="info">
+If the Security Analyst detects a `.vcp/config.json` with a valid plugin path, it automatically loads VCP standards and uses them as a structured checklist alongside OWASP Top 10 analysis. The `vcp_standards_referenced` field in its output provides traceability.
+</Callout>
+
+### Phase 2: Planning
+
+An architect agent reads the user story and designs the implementation:
+
+```text
+Task: Planning 1 (opus)
+Reading: .vcp/task/user-story.json
+
+Planning implementation approach...
+```
+
+The planner produces `.vcp/task/plan-refined.json` with technical approach, implementation steps, test plan, and risk assessment.
+
+### Phase 3: Plan Reviews
+
+Each plan-review stage in the config creates a review task. Reviews run sequentially by default — each reviewer must approve before the next can start:
+
+```text
+Task: Plan Review 1 (sonnet) — reviewing plan-refined.json
+  Checking: feasibility, completeness, acceptance criteria coverage
+  Verdict: approved
+
+Task: Plan Review 2 (opus) — reviewing plan-refined.json
+  Checking: architectural soundness, security implications
+  Verdict: needs_changes
+  Issues:
+    - Missing consideration for distributed rate limiting across multiple instances
+    - No fallback behavior when Redis is unavailable
+
+  → Creating fix task: "Fix Plan Review 2 v1"
+  → Creating re-review task: "Plan Review 2 v2"
+```
+
+When a reviewer returns `needs_changes`, Dev Buddy automatically:
+1. Creates a fix task with the specific issues to address
+2. Creates a re-review task that blocks until the fix completes
+3. The same reviewer validates the fix before the pipeline continues
+
+This loop continues until approval or a maximum iteration count is reached.
+
+### Phase 4: Implementation
+
+Once all plan reviews approve, the implementer agent writes the code:
+
+```text
+Task: Implementation 1 (sonnet)
+Reading: .vcp/task/plan-refined.json
+Implementing rate limiting...
+
+Files modified:
+  + src/middleware/rate-limit.ts (new)
+  M src/api/routes.ts (added middleware)
+  + src/__tests__/rate-limit.test.ts (new)
+
+Output: .vcp/task/impl-result.json
+```
+
+### Phase 5: Code Reviews
+
+Code reviews follow the same pattern as plan reviews — sequential by default, with automatic fix loops:
+
+```text
+Task: Code Review 1 (sonnet)
+  Checking: functionality, test coverage, error handling
+  Verdict: approved
+  Acceptance criteria verified: AC-1 ✓, AC-2 ✓, AC-3 ✓, AC-4 ✓
+
+Task: Code Review 2 (opus)
+  Checking: security, performance, architecture
+  Verdict: approved
+
+Task: Code Review 3 (sonnet)
+  Checking: code quality, maintainability
+  Verdict: approved
+
+Pipeline complete! All reviews approved.
+```
+
+## Step 4: Run a Bug Fix Pipeline
+
+The bug fix pipeline uses a different early-phase approach optimized for diagnosis:
+
+```bash
+/dev-buddy-bug-fix Users report 500 errors on /api/checkout when cart has > 50 items
+```
+
+### Root Cause Analysis
+
+Multiple RCA agents independently diagnose the bug:
+
+```text
+Task: RCA 1 (sonnet)
+  Investigating: /api/checkout handler, cart processing logic
+  Root cause: Array.map in calculateTotals creates O(n²) nested loop
+    when processing discount combinations for large carts.
+  Evidence: Stack trace shows timeout at cart.service.ts:142
+
+Task: RCA 2 (opus)
+  Investigating: database queries, memory profiling
+  Root cause: Confirms O(n²) complexity. Additionally found that
+    each item triggers a separate DB query for inventory check
+    (N+1 query problem at cart.repository.ts:89).
+```
+
+### Consolidation
+
+The orchestrator merges the independent diagnoses:
+
+```text
+Consolidating RCA findings...
+  RCA 1: O(n²) discount calculation — CONFIRMED by both
+  RCA 2: N+1 inventory queries — additional finding from opus
+
+Combined diagnosis written to .vcp/task/user-story.json
+Fix plan written to .vcp/task/plan-refined.json
+  - Replace nested loop with Map-based lookup (O(n))
+  - Batch inventory queries with WHERE IN clause
+```
+
+The pipeline then continues through plan validation, implementation, and code reviews — same as the feature pipeline.
+
+## Step 5: Configure AI Providers
+
+Dev Buddy supports three types of providers:
+
+### Subscription (Default)
+
+Uses your Claude subscription via Claude Code's built-in Task tool. No API key needed:
+
+```json
+{ "type": "code-review", "provider": "anthropic-subscription", "model": "opus" }
+```
+
+Available models: `opus`, `sonnet`, `haiku`.
+
+### API Providers
+
+Connect external API-compatible providers (OpenRouter, MiniMax, self-hosted models):
+
+```bash
+/dev-buddy-manage-presets
+```
+
+This opens an interactive preset manager:
+
+```text
+Dev Buddy — AI Presets Manager
+
+Current presets:
+  1. anthropic-subscription (subscription) — built-in
+
+Actions:
+  [1] Add new preset
+  [2] Update preset
+  [3] Remove preset
+
+> 1
+
+Preset name: openrouter
+Type: api
+Base URL: https://openrouter.ai/api/v1
+API Key: sk-or-***
+Models: anthropic/claude-sonnet-4, anthropic/claude-opus-4
+
+Preset "openrouter" saved.
+```
+
+Then use it in your pipeline config:
+
+```json
+{ "type": "code-review", "provider": "openrouter", "model": "anthropic/claude-opus-4" }
+```
+
+### CLI Providers
+
+Integrate command-line AI tools like OpenAI Codex:
+
+```json
+{
+  "name": "codex",
+  "type": "cli",
+  "command": "codex",
+  "args_template": "--model {model} --prompt {prompt} --output-file {output_file}",
+  "one_shot_args_template": "--model {model} --prompt {prompt}",
+  "models": ["o3-mini"]
+}
+```
+
+This enables using Codex as an independent final gate — a different AI family catching different issues than Claude.
+
+## Step 6: Customize Your Pipeline
+
+Edit `~/.vcp/dev-buddy.json` to tailor the pipeline to your needs.
+
+### Fewer Reviews (Faster Iteration)
+
+```json
+{
+  "feature_pipeline": [
+    { "type": "requirements", "provider": "anthropic-subscription", "model": "opus" },
+    { "type": "planning", "provider": "anthropic-subscription", "model": "opus" },
+    { "type": "plan-review", "provider": "anthropic-subscription", "model": "sonnet" },
+    { "type": "implementation", "provider": "anthropic-subscription", "model": "sonnet" },
+    { "type": "code-review", "provider": "anthropic-subscription", "model": "opus" }
+  ]
+}
+```
+
+### Parallel Reviews
+
+Add `"parallel": true` to run reviews concurrently:
+
+```json
+{
+  "feature_pipeline": [
+    { "type": "requirements", "provider": "anthropic-subscription", "model": "opus" },
+    { "type": "planning", "provider": "anthropic-subscription", "model": "opus" },
+    { "type": "plan-review", "provider": "anthropic-subscription", "model": "sonnet", "parallel": true },
+    { "type": "plan-review", "provider": "anthropic-subscription", "model": "opus", "parallel": true },
+    { "type": "implementation", "provider": "anthropic-subscription", "model": "sonnet" },
+    { "type": "code-review", "provider": "anthropic-subscription", "model": "sonnet", "parallel": true },
+    { "type": "code-review", "provider": "anthropic-subscription", "model": "opus", "parallel": true }
+  ]
+}
+```
+
+Parallel reviews in the same group run at the same time. The next stage waits for all group members to complete.
+
+### Mixed Providers (Cross-Model Review)
+
+Use different AI providers for different stages to get independent perspectives:
+
+```json
+{
+  "feature_pipeline": [
+    { "type": "requirements", "provider": "anthropic-subscription", "model": "opus" },
+    { "type": "planning", "provider": "anthropic-subscription", "model": "opus" },
+    { "type": "plan-review", "provider": "anthropic-subscription", "model": "sonnet" },
+    { "type": "plan-review", "provider": "openrouter", "model": "anthropic/claude-opus-4" },
+    { "type": "implementation", "provider": "anthropic-subscription", "model": "sonnet" },
+    { "type": "code-review", "provider": "anthropic-subscription", "model": "opus" },
+    { "type": "code-review", "provider": "codex", "model": "o3-mini" }
+  ]
+}
+```
+
+## Step 7: One-Shot Tasks
+
+For quick tasks that don't need a full pipeline, use `/dev-buddy-once`:
+
+```bash
+/dev-buddy-once use anthropic-subscription model opus Review this PR for security issues
+```
+
+```bash
+/dev-buddy-once use openrouter model anthropic/claude-opus-4 Refactor the auth module
+```
+
+This runs a single task with the specified provider and model — no pipeline, no reviews, just direct execution.
+
+## Web Configuration Portal
+
+For visual configuration, use the web portal:
+
+```bash
+/dev-buddy-config
+```
+
+This launches a local web UI with three tabs:
+
+- **AI Presets** — Add, edit, and remove provider configurations
+- **Pipeline Config** — Drag and drop pipeline stages, set parallel groups
+- **Session Managers** — Monitor running sessions and their status
+
+## How Task-Based Enforcement Works
+
+The key insight behind Dev Buddy is that pipeline stages are enforced through **data constraints**, not instructions.
+
+Traditional approach:
+```text
+Instruction: "Run Sonnet review, then Opus review, then implement"
+Problem: The AI can skip "redundant" steps or reorder them
+```
+
+Dev Buddy's approach:
+```text
+T1 = TaskCreate("Plan Review 1")
+T2 = TaskCreate("Plan Review 2")  → blockedBy: [T1]
+T3 = TaskCreate("Implementation") → blockedBy: [T2]
+```
+
+When the orchestrator calls `TaskList()`, blocked tasks are invisible. The AI can only see and claim the next unblocked task. This is a data query, not instruction following — it's structurally impossible to skip stages.
+
+### Dynamic Fix Tasks
+
+When a reviewer returns `needs_changes`:
+
+```text
+Code Review 2 (opus): needs_changes
+  Issues: Missing input validation on cart item quantity
+
+  → TaskCreate("Fix Code Review 2 v1")           blockedBy: [review_task]
+  → TaskCreate("Code Review 2 v2")               blockedBy: [fix_task]
+  → TaskUpdate(next_stage, addBlockedBy: [v2])    rewires the chain
+```
+
+The fix-and-re-review cycle continues until approval or the maximum iteration limit (default: 10), at which point it escalates to you.
+
+## Pipeline Artifacts
+
+All pipeline outputs are stored in `.vcp/task/`:
+
+| File | Content |
+|------|---------|
+| `pipeline-tasks.json` | Task chain with IDs, config snapshot, resolved stages |
+| `analysis-*.json` | Specialist exploration findings (5 files) |
+| `user-story.json` | Synthesized requirements and acceptance criteria |
+| `plan-refined.json` | Technical approach, steps, test plan, risks |
+| `plan-review-N.json` | Plan review verdicts and feedback |
+| `impl-result.json` | Implementation summary and files changed |
+| `code-review-N.json` | Code review verdicts and findings |
+| `rca-N.json` | Root cause analysis findings (bug fix pipeline) |
+
+These artifacts provide a complete audit trail of every decision made during the pipeline.
+
+## Quick Reference
+
+| Command | What It Does |
+|---------|-------------|
+| `/dev-buddy-feature-implement [description]` | Start feature development pipeline |
+| `/dev-buddy-bug-fix [description]` | Start bug fix pipeline |
+| `/dev-buddy-once use <provider> [model <model>] <task>` | Run a single task with a specific provider |
+| `/dev-buddy-manage-presets` | Add, update, or remove AI provider presets |
+| `/dev-buddy-config` | Open the web configuration portal |
+
+Dev Buddy is part of the [VCP project](https://github.com/Z-M-Huang/vcp) — the same repo that provides standards enforcement. Together, they ensure AI-generated code meets security and quality standards through both proactive enforcement and multi-perspective review.

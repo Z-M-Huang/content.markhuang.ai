@@ -1,0 +1,390 @@
+AI-generated code ships faster, but research tells a sobering story: a **2.74x higher vulnerability rate** compared to human-written code (CodeRabbit 2025), **45% of AI code containing security flaws** (Veracode 2025), and an **8x increase in code duplication** (GitClear 2024). The speed gains evaporate when you spend the next sprint patching what the AI introduced.
+
+[Vibe Coding Protocol (VCP)](https://github.com/Z-M-Huang/vcp) is an open-source Claude Code plugin that tackles this head-on. It enforces 40 security, architecture, and quality standards across 12 technology scopes — not as a linter you run after the fact, but as a three-layer system that prevents bad code before it reaches disk.
+
+This tutorial walks through installing VCP, configuring it for your project, and using its key commands with real output examples.
+
+## What VCP Does
+
+VCP operates in three layers, each catching what the others miss:
+
+| Layer | When | How |
+|-------|------|-----|
+| **Proactive Context** | Session start | Injects applicable rules into Claude's context so it writes better code from the start |
+| **Real-Time Blocking** | Every file write | A security gate hook checks 21 regex patterns across 9 CWEs and blocks dangerous code before it hits disk |
+| **On-Demand Scanning** | When you ask | 10 skills provide deep AI-driven analysis — audits, pre-commit reviews, dependency checks, test quality reviews |
+
+The standards cover OWASP Top 10:2025, CWE Top 25:2024, OWASP API Security Top 10, and compliance frameworks (GDPR, PCI DSS, HIPAA). Each standard includes actionable rules, code examples (do this / not this), and documented exceptions.
+
+## Prerequisites
+
+- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) (CLI)
+- [Bun](https://bun.sh/) runtime (VCP hooks are TypeScript, executed by Bun)
+
+## Step 1: Install the VCP Plugin
+
+Open Claude Code in your project directory and run:
+
+```bash
+/plugin marketplace add Z-M-Huang/vcp
+```
+
+This registers the VCP marketplace. Now install the VCP plugin:
+
+```bash
+/plugin install vcp@vcp
+```
+
+You should see confirmation that the plugin was installed with its hooks and skills registered.
+
+<Callout variant="tip">
+VCP also includes an optional **Dev Buddy** plugin for multi-AI pipeline orchestration (multiple models reviewing each other's work). Install it separately with `/plugin install vcp@dev-buddy`. This tutorial focuses on the core VCP plugin.
+</Callout>
+
+## Step 2: Initialize Your Project
+
+Run the init command to create your project configuration:
+
+```bash
+/vcp-init
+```
+
+VCP will:
+1. Create `~/.vcp/config.json` (global config) if it doesn't exist
+2. Detect your project's frameworks and technology scopes
+3. Create `.vcp/config.json` in your project root
+
+Here's what a typical project config looks like after initialization:
+
+```json
+{
+  "version": "1.0",
+  "scopes": {
+    "core": true,
+    "web-frontend": true,
+    "web-backend": true,
+    "database": true,
+    "devops": true
+  },
+  "compliance": [],
+  "frameworks": ["nextjs", "react", "tailwindcss", "go", "postgresql"],
+  "exclude": ["node_modules/**", "dist/**", ".next/**"],
+  "severity": "medium",
+  "ignore": []
+}
+```
+
+The `scopes` field controls which standards apply. A React + Go project gets `web-frontend` and `web-backend` standards. A mobile app would get `mobile` instead. Core standards (security, architecture, error handling, etc.) are always active.
+
+<Callout variant="info">
+Commit `.vcp/config.json` to version control so the entire team shares the same standards. The `pluginRoot` field (added automatically) is machine-specific and should be in `.gitignore`.
+</Callout>
+
+## Step 3: Verify the Security Gate
+
+The security gate hook runs automatically on every `Write`, `Edit`, and `Bash` tool call. It blocks 21 dangerous patterns across 9 CWEs before code reaches your files.
+
+To verify it's working, try asking Claude to write code with a hardcoded secret:
+
+```text
+> Write a function that connects to the database with password "supersecret123"
+```
+
+The security gate will block this with output like:
+
+```text
+BLOCKED by VCP Security Gate
+CWE-798: Hardcoded credential detected
+Pattern: password\s*[:=]\s*["'][^"']{8,}["']
+
+The code was not written to disk. Use environment variables
+or a secrets manager instead of hardcoding credentials.
+```
+
+Here are some of the patterns it catches:
+
+| CWE | What It Catches | Example |
+|-----|-----------------|---------|
+| CWE-798 | Hardcoded secrets | `password = "abc123"`, AWS keys (`AKIA...`), JWT tokens |
+| CWE-89 | SQL injection | `` `SELECT * FROM users WHERE id = ${id}` `` |
+| CWE-95 | Code injection | `eval(userInput)` |
+| CWE-79 | XSS | `element.innerHTML = userInput` |
+| CWE-502 | Insecure deserialization | `pickle.load(untrusted)`, `yaml.load()` |
+| CWE-1321 | Prototype pollution | `obj.__proto__ = malicious` |
+
+## Step 4: Run Your First Audit
+
+The `/vcp-audit` command performs a comprehensive analysis against all applicable standards:
+
+```bash
+/vcp-audit src/
+```
+
+VCP will scan the specified path and produce a structured report. Here's an abbreviated example output:
+
+```text
+VCP Audit Report — src/
+Standards applied: 24 (core: 12, web-frontend: 4, web-backend: 6, database: 2)
+Severity threshold: medium
+
+CRITICAL
+  [core-security/rule-1] src/api/users.ts:42
+    SQL query uses string concatenation instead of parameterized query.
+    Fix: Use parameterized query — db.query("SELECT * FROM users WHERE id = $1", [id])
+
+  [core-security/rule-4] src/config/database.ts:8
+    Database password hardcoded in source file.
+    Fix: Read from environment variable — process.env.DB_PASSWORD
+
+HIGH
+  [web-backend-security/rule-7] src/api/auth.ts:15
+    Authorization check missing on /api/admin/* endpoints.
+    Fix: Add authentication middleware before route handlers.
+
+  [core-error-handling/rule-1] src/services/payment.ts:67
+    Empty catch block silently swallows PaymentError.
+    Fix: Log the error and re-throw or return a typed error response.
+
+MEDIUM
+  [core-architecture/rule-1] src/api/users.ts:1-180
+    Handler contains business logic, database queries, and response formatting.
+    Fix: Extract business logic to a service layer, database access to a repository.
+
+  [core-code-quality/rule-3] src/utils/validate.ts + src/helpers/check.ts
+    Duplicate email validation logic in two files.
+    Fix: Consolidate into a single validation module.
+
+Summary: 2 critical, 2 high, 2 medium, 0 low
+Verdict: NEEDS REMEDIATION
+```
+
+### Audit Variants
+
+VCP offers three audit modes:
+
+```bash
+/vcp-audit src/               # Full audit with validation pass
+/vcp-audit quick              # Fast scan, no validation (good for iteration)
+/vcp-audit compliance gdpr    # Audit against a specific compliance framework
+```
+
+The compliance audit checks your code against framework-specific requirements — GDPR data handling, PCI DSS payment security, or HIPAA health data protections.
+
+## Step 5: Pre-Commit Review
+
+Before committing, run the pre-commit review to check only your changed files:
+
+```bash
+/vcp-pre-commit-review
+```
+
+This scans staged and unstaged changes and produces a **PASS** or **BLOCK** verdict:
+
+```text
+VCP Pre-Commit Review
+
+Files reviewed: 3
+  M src/api/auth.ts
+  M src/services/user.ts
+  A src/middleware/rate-limit.ts
+
+Findings:
+  [PASS] src/middleware/rate-limit.ts
+    No issues found.
+
+  [PASS] src/services/user.ts
+    No issues found.
+
+  [BLOCK] src/api/auth.ts
+    core-security/rule-6: JWT token validation missing audience check.
+    Fix: Add { audience: "your-app" } to jwt.verify() options.
+
+Verdict: BLOCK (1 finding requires remediation before commit)
+```
+
+## Step 6: Check Your Dependencies
+
+The dependency check verifies your lockfile, version ranges, and package legitimacy:
+
+```bash
+/vcp-dependency-check
+```
+
+Example output:
+
+```text
+VCP Dependency Check
+
+Lockfile: bun.lock (present, committed)
+Dependencies analyzed: 147
+
+WARNINGS:
+  [version-range] express: "^4.18.0" — wide range allows minor versions
+    with potential breaking changes. Consider pinning to "4.18.2".
+
+  [typosquat-risk] lodahs (devDependencies)
+    Possible typosquat of "lodash". Verify this is the intended package.
+
+  [no-lockfile-entry] @internal/utils
+    Package in dependencies but missing from lockfile.
+    Run: bun install
+
+PASS: No critical dependency issues found.
+```
+
+## Step 7: Review Test Quality
+
+VCP can analyze your tests for common anti-patterns:
+
+```bash
+/vcp-review-tests src/__tests__/
+```
+
+```text
+VCP Test Quality Review — src/__tests__/
+
+  [NEEDS WORK] auth.test.ts
+    - Excessive mocking: 7 mock setup calls. Tests validate mock behavior,
+      not real logic. Consider integration tests with fewer mocks.
+    - Tautological assertion (line 45): Asserts mock returns exactly what
+      it was configured to return. This tests the mock framework, not your code.
+
+  [GOOD] rate-limit.test.ts
+    - Tests real behavior with minimal mocking.
+    - Covers edge cases: zero requests, boundary values, clock rollover.
+
+  [NEEDS WORK] user.test.ts
+    - Missing edge cases: no test for empty input, null values,
+      or concurrent access.
+    - All assertions check happy path only.
+
+Summary: 1 good, 2 need work, 0 rewrite
+```
+
+## Configuring VCP
+
+### Adjusting Severity
+
+Control which findings appear by setting the severity threshold:
+
+```bash
+/vcp-config severity high
+```
+
+Options: `critical`, `high`, `medium` (default), `low`. Setting `high` hides medium and low findings.
+
+### Enabling Compliance
+
+Add compliance frameworks to your project:
+
+```bash
+/vcp-config compliance add gdpr
+```
+
+This activates GDPR-specific standards on top of your existing scopes.
+
+### Ignoring Rules
+
+If a rule doesn't apply to your project, suppress it:
+
+```bash
+/vcp-config ignore add core-architecture/rule-5
+```
+
+You can ignore by standard ID (`core-architecture`), specific rule (`core-architecture/rule-5`), or CWE pattern (`CWE-798`). Ignored rules are recorded in `.vcp/config.json` for transparency.
+
+### Managing Scopes
+
+Enable or disable technology scopes:
+
+```bash
+/vcp-config scope enable agentic-ai    # Building AI agents? Add these standards
+/vcp-config scope disable mobile       # Not a mobile project
+```
+
+## How It Works Under the Hood
+
+### Standards Architecture
+
+VCP's 40 standards are markdown files hosted on GitHub, fetched at runtime via a manifest system:
+
+```text
+manifest.json (root)
+  → scopes/core.json         → 12 standards (always active)
+  → scopes/web-frontend.json → 4 standards
+  → scopes/web-backend.json  → 6 standards
+  → scopes/database.json     → 2 standards
+  → scopes/devops.json       → 4 standards
+  → scopes/agentic-ai.json   → 5 standards
+  → scopes/compliance-*.json → 3 compliance frameworks
+  ...
+```
+
+Each standard follows a consistent structure:
+
+```markdown
+## Principle
+WHY this standard exists (1-3 sentences)
+
+## Rules
+1. Validate all input at system boundaries.
+2. Parameterize all data queries. No exceptions.
+...
+
+## Patterns
+### Do This
+(correct code example with explanation)
+
+### Not This
+(vulnerable code example with explanation)
+
+## Exceptions
+When deviation is acceptable and what safeguards are needed.
+```
+
+This structure is optimized for LLM consumption — the AI can parse rules, understand reasoning, and apply them contextually rather than following a rigid checklist.
+
+### The Security Gate in Detail
+
+The real-time security gate (`security-gate.ts`) runs as a Claude Code `PreToolUse` hook. Every time Claude attempts to write a file or run a command:
+
+1. The hook receives the tool input as JSON on stdin
+2. It extracts the content being written (or the command being run)
+3. It checks against 21 compiled regex patterns
+4. If a pattern matches, it exits with code 2 — Claude Code interprets this as a block and refuses to write the code
+
+Documentation files (`.md`, `.mdx`, `.txt`, `.rst`) are exempt — you can write about security vulnerabilities without triggering the gate.
+
+The patterns are deliberately conservative. They catch the most common and dangerous mistakes (hardcoded passwords, SQL concatenation, `eval()` with variables) without drowning you in false positives. For deeper analysis that traces data flow across variables and functions, use `/vcp-audit`.
+
+## The Bigger Picture
+
+VCP addresses a fundamental tension in AI-assisted development: AI writes code fast, but speed without standards produces technical debt. Traditional linters catch syntax issues but miss architectural violations, security anti-patterns, and testing deficiencies.
+
+VCP's approach is different:
+
+- **Proactive, not reactive** — Rules are injected before code is written, not checked after
+- **Principled, not prescriptive** — Standards explain WHY, allowing the AI to apply judgment
+- **Layered defense** — No single layer catches everything, but together they provide comprehensive coverage
+- **Configurable** — Enable only the scopes and compliance frameworks your project needs
+
+For teams using Claude Code as part of their development workflow, VCP provides the guardrails that keep AI-generated code at the same standard as human-written code — without slowing down the parts that should be fast.
+
+## Quick Reference
+
+| Command | What It Does |
+|---------|-------------|
+| `/vcp-init` | Initialize project config |
+| `/vcp-context` | Re-inject rules (after context compaction) |
+| `/vcp-audit [path]` | Full standards audit |
+| `/vcp-audit quick` | Fast audit without validation pass |
+| `/vcp-audit compliance gdpr` | Compliance-specific audit |
+| `/vcp-pre-commit-review` | Review changed files (PASS/BLOCK) |
+| `/vcp-dependency-check` | Verify lockfile, versions, package legitimacy |
+| `/vcp-review-tests [path]` | Analyze test quality and anti-patterns |
+| `/vcp-coverage-gaps [path]` | Find untested functions and missing edge cases |
+| `/vcp-test-plan [path]` | Generate structured test plans |
+| `/vcp-root-cause-check` | Verify a bug fix addresses root cause |
+| `/vcp-config [command]` | Manage scopes, compliance, severity, ignore rules |
+
+The source code and full documentation are on [GitHub](https://github.com/Z-M-Huang/vcp). VCP is open-source and actively maintained.

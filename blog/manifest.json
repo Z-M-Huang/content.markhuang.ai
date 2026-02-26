@@ -1,0 +1,28 @@
+{
+  "articles": [
+    {
+      "slug": "dev-buddy-multi-ai-pipelines-with-claude-code",
+      "title": "Dev Buddy: Multi-AI Development Pipelines for Claude Code",
+      "description": "A step-by-step guide to Dev Buddy — an open-source Claude Code plugin that orchestrates multiple AI models through structured development pipelines with task-based enforcement, parallel specialist analysis, and automatic fix-and-re-review loops.",
+      "date": "2026-02-25",
+      "category": "tutorials",
+      "categoryLabel": "Tutorials",
+      "tags": ["claude-code", "ai-tools", "code-quality", "multi-ai", "open-source"],
+      "published": true,
+      "image": null,
+      "readTime": "11 min read"
+    },
+    {
+      "slug": "vcp-enforce-code-standards-with-claude-code",
+      "title": "VCP: Enforcing Code Standards in AI-Assisted Development with Claude Code",
+      "description": "A step-by-step guide to installing and using Vibe Coding Protocol (VCP) — a three-layer enforcement framework that catches security vulnerabilities, enforces architecture standards, and orchestrates multi-AI code reviews directly inside Claude Code.",
+      "date": "2026-02-25",
+      "category": "tutorials",
+      "categoryLabel": "Tutorials",
+      "tags": ["claude-code", "security", "ai-tools", "code-quality", "open-source"],
+      "published": true,
+      "image": null,
+      "readTime": "10 min read"
+    }
+  ]
+}
