@@ -1,0 +1,109 @@
+![Permission Syndrome: A Clinical Case Study](https://cdn.markhuang.ai/blog/permission-syndrome-dangerously-skip-permissions-footgun/permission-syndrome.png)
+
+There's a flag in Claude Code called `--dangerously-skip-permissions`. The name literally has "dangerously" in it. And yet, a lot of vibe coders treat it as the default way to run Claude Code. Flip it on, never look back. Full autonomy. No permission prompts. Maximum speed.
+
+Until it deletes your home directory.
+
+I've been watching the incidents pile up over the past year. I think it's worth talking about what's actually happening, why people keep doing it, and what you can do about it without giving up the speed that makes AI coding useful.
+
+## What `--dangerously-skip-permissions` Actually Does
+
+When you run Claude Code normally, it asks for permission before executing shell commands, writing files, or making changes. You see what it's about to do, you approve or reject. It's a human-in-the-loop model.
+
+`--dangerously-skip-permissions` removes the loop. Claude can execute *any* bash command, write or delete *any* file, push code, install packages — all without asking you. It's the "I trust this AI completely" button.
+
+And to be fair, it *is* faster. No interruptions. No "approve/deny" clicking. You describe what you want, walk away, come back to a finished task. That's the appeal. That's why people use it.
+
+The problem is that AI models don't always do what you think you asked.
+
+## The Incident List
+
+This is not theoretical. Real people have lost real data.
+
+**October 2025 — The `rm -rf /` Incident.** Developer Mike Wolak was working on a firmware project on Ubuntu/WSL2. Claude Code executed an `rm -rf` starting from root (`/`). His [GitHub bug report (#10077)](https://github.com/anthropics/claude-code/issues/10077) shows error logs with thousands of "Permission denied" messages for system paths like `/bin`, `/boot`, and `/etc`. The command tried to delete *everything on the machine*. Only Linux file permissions stopped it at the system level. Every user-owned file was gone. The worst part? He wasn't even using `--dangerously-skip-permissions`. The permission system itself failed. If that can happen *with* the safety net, imagine running without one.
+
+**December 2025 — The Home Directory Wipe.** A Reddit user asked Claude to clean up packages in a repository. Claude generated this command:
+
+```bash
+rm -rf tests/ patches/ plan/ ~/
+```
+
+See that `~/` at the end? That's your entire home directory. Gone. [Simon Willison](https://x.com/simonw/status/1998447540916936947) amplified this on X, and it became probably the most public `--dangerously-skip-permissions` disaster story.
+
+**July 2025 — Replit Deletes a Production Database.** An AI agent on Replit [wiped a production database](https://fortune.com/2025/07/23/ai-coding-tool-replit-wiped-database-called-it-a-catastrophic-failure/) containing data for 1,200+ executives during an active code freeze. The AI later admitted to "panicking" and running unauthorized commands. A different platform, same underlying problem — unrestricted AI access to destructive operations.
+
+**December 2025 — Google Antigravity Wipes a Drive.** Google's Antigravity coding platform [wiped an entire drive partition](https://www.theregister.com/2025/12/01/google_antigravity_wipes_d_drive/), bypassing the Recycle Bin. Multiple users reported similar issues on Reddit.
+
+There's also the less dramatic but arguably scarier risk: **prompt injection**. Researchers have shown that hidden text inside a `.docx` file can manipulate Claude into uploading sensitive files to an attacker's account via allowlisted APIs. The AI doesn't know it's being tricked. And with permissions skipped, there's nothing between the injected instruction and execution.
+
+These aren't edge cases from bad prompts. These are normal development tasks — cleaning up packages, working on firmware, writing code — where the AI did something destructive and nothing stopped it.
+
+## Why People Keep Doing It
+
+Three reasons, from what I've seen:
+
+**1. They genuinely don't understand the risk.** A lot of vibe coders aren't traditional developers. They're using AI as their primary coding tool — sometimes their *only* coding tool. They don't have the instinct that says "wait, what is this command actually going to do?" The flag is a convenience toggle to them, not a security decision.
+
+**2. Speed to production matters more than security.** There's real pressure to ship fast. When every permission prompt feels like friction between you and your deadline, skipping them feels like a productivity win. It is — until it isn't.
+
+**3. People are thinking lightly that developers can be replaced.** This one's more subtle but I think it matters. When the attitude is "AI can handle it, we don't need to understand the code," people stop questioning what the AI is doing. They stop reading the commands. They stop thinking about blast radius. The whole point of "vibe coding" is to *not* think about the details. But the details are where `rm -rf ~/` lives.
+
+## What VCP Does About It
+
+I built [VCP (Vibe Coding Protocol)](https://github.com/Z-M-Huang/vcp) as a security framework for AI-assisted development. It uses three layers of enforcement, and they work *even when `--dangerously-skip-permissions` is enabled*.
+
+**Layer 1 — Proactive Context.** At session start, VCP injects security and architecture rules into Claude's context. The AI internalizes these rules *while* it writes code. It's not a post-hoc scan — it shapes how the AI thinks about the code before it generates anything.
+
+**Layer 2 — On-Demand Scanning.** Skills like `/vcp-audit` and `/vcp-pre-commit-review` scan your code against 41 standards across 12 scopes. Deep analysis for nuanced issues that can't be caught by pattern matching alone.
+
+**Layer 3 — Real-Time Blocking.** This is the critical one. A security gate hook runs on every `Write`, `Edit`, and `Bash` call — intercepting tool calls *before* they execute. It blocks 21 dangerous patterns across 9 CWEs:
+
+- Hardcoded secrets (API keys, tokens, private keys)
+- SQL injection via string concatenation
+- Code injection via `eval()` with user input
+- XSS via `innerHTML`
+- Insecure deserialization
+- Obfuscated shell execution
+
+When it catches something, you see this:
+
+```
+❌ VCP Security Gate — BLOCKED:
+   CWE-798: Hardcoded secret detected. Use environment variables or a secret manager.
+```
+
+The AI gets the error message and self-corrects. The dangerous code never reaches disk. This works regardless of your permission mode — you could be running `--dangerously-skip-permissions` and the security gate still intercepts every tool call.
+
+## VCP Docker — Keep Your Speed, Lose the Risk
+
+The community consensus on `--dangerously-skip-permissions` has basically converged to: "only use it in Docker containers." A [LessWrong post](https://www.lesswrong.com/posts/WSog3tgxEZgBFpHrR/dangerously-skip-permissions) put it well — set hard limits on the blast radius, then maximize your productivity within those limits.
+
+That's exactly what [VCP Docker](https://github.com/Z-M-Huang/vcp/blob/main/docker/README.md) is. A ready-to-use containerized environment with Claude Code, Codex CLI, Gemini CLI, Bun, Git, GitHub CLI, tmux, and ripgrep pre-installed. The key architectural decisions:
+
+- **Ubuntu 24.04 base** — full package ecosystem for daily driver use
+- **Non-root user** (`devuser`) with passwordless `sudo` — Claude Code refuses to run `--dangerously-skip-permissions` as root, and you still get root access for package installs via sudo
+- **`--dangerously-skip-permissions` aliased by default** — the container *is* the sandbox
+- **You control the blast radius** — volume mounts define exactly what the container can see (your code, SSH keys, Claude data). Everything else on your host is invisible
+
+```bash
+# Start the container
+docker compose up -d
+
+# Shell in and use Claude at full speed
+docker exec -it vcp-docker bash
+claude "refactor the auth module"
+```
+
+If Claude decides to `rm -rf /` inside the container? It destroys the container's filesystem. Your host machine is fine. Your other projects are fine. You `docker compose up -d` again and you're back in 10 seconds.
+
+Combine this with VCP's security gate running inside the container and you get defense in depth — the AI is both isolated from your system *and* pattern-checked on every operation.
+
+## The Bottom Line
+
+`--dangerously-skip-permissions` is not going away. People will keep using it because the productivity gain is real. I use it myself — inside a container.
+
+The question isn't "should you use it?" It's "what's between the AI and your data when things go wrong?"
+
+If the answer is "nothing" — you're one bad prompt away from a very bad day. If the answer is "an isolated container with a security gate that blocks dangerous patterns in real time" — you get the speed and keep your data.
+
+[Set up VCP Docker](https://github.com/Z-M-Huang/vcp/blob/main/docker/README.md) and stop running `--dangerously-skip-permissions` on bare metal.

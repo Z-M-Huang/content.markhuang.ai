@@ -35,6 +35,18 @@
       "published": true,
       "image": null,
       "readTime": "5 min read"
+    },
+    {
+      "slug": "permission-syndrome-dangerously-skip-permissions-footgun",
+      "title": "Permission Syndrome: Why --dangerously-skip-permissions Is the Vibe Coder's Favorite Footgun",
+      "description": "Real incidents of AI wiping home directories and production databases — and how VCP's security gate and Docker image let you keep the speed of --dangerously-skip-permissions without the risk.",
+      "date": "2026-02-26",
+      "category": "ai-llms",
+      "categoryLabel": "AI & LLMs",
+      "tags": ["claude-code", "security", "docker", "vibe-coding", "vcp"],
+      "published": true,
+      "image": "https://cdn.markhuang.ai/blog/permission-syndrome-dangerously-skip-permissions-footgun/permission-syndrome.png",
+      "readTime": "7 min read"
     }
   ]
 }
