@@ -1,0 +1,96 @@
+If you told me a year ago that I'd be paying $1 a month to access eight different AI models for coding assistance, I wouldn't have believed it. But Alibaba's Bailian platform just launched a "Coding Plan" and the pricing is genuinely surprising.
+
+## What Is the Bailian Coding Plan?
+
+Alibaba's [Model Studio (百炼)](https://www.aliyun.com/benefit/ai/aistar?clubBiz=subTask..12415185..10263..) now offers a flat-rate subscription specifically for AI-assisted coding. Instead of paying per token like most providers, you get a fixed monthly allowance of requests across multiple models.
+
+Two tiers:
+
+- **Lite**: ¥7.9/month (~$1 USD) for the first month — 18,000 requests/month
+- **Pro**: ¥39.9/month (~$5.50 USD) for the first month — 90,000 requests/month
+
+The promotional pricing is for new subscribers through April 1, 2026. It's a gradual ramp: month 2 is 50% off (Lite ¥20, Pro ¥100), then full price from month 3 onwards (Lite ¥40/~$5.50, Pro ¥200/~$27.50). Even the full price is low for what you get — but the first month is practically free. New Alibaba Cloud accounts also get a ¥30 credit, which more than covers the Lite plan's first month. So it's basically a free trial if you're signing up fresh.
+
+## Eight Models, One Subscription
+
+This is the part that got my attention. Both tiers include access to:
+
+- **Qwen 3.5 Plus** (with image understanding)
+- **Kimi K2.5** (with image understanding)
+- **GLM-5**
+- **MiniMax M2.5**
+- **Qwen3-Max** (2026-01-23 snapshot)
+- **Qwen3-Coder-Next**
+- **Qwen3-Coder-Plus**
+- **GLM-4.7**
+
+You're not locked into one model. You can switch between them depending on the task, which is exactly what I've been doing.
+
+## How I'm Using It
+
+I subscribed to the Lite plan and I've been rotating through MiniMax M2.5, Qwen 3.5 Plus, Kimi K2.5, and GLM-5. My use case is specific — I'm using these models to review plans and code implementations, not as my primary coding assistant.
+
+Let me be honest here: Claude Opus is still really good for coding tasks, and GPT-5.3-Codex is still the most detail-oriented reviewer I've used. As a senior software developer, I'd still choose Claude and Codex for serious work. That hasn't changed.
+
+But that's not the point of this subscription.
+
+The point is exploring. Seeing how other models handle the same problems. Understanding where Qwen's strengths are, how Kimi approaches code review differently, what GLM-5 gets right and where it falls short. The AI model landscape is moving fast. If you only stay inside one ecosystem, you lose perspective on what the rest of the field is doing. At ¥7.9 a month, Bailian makes that comparison trivially cheap.
+
+## Works With the Tools You Already Use
+
+The Coding Plan is compatible with:
+
+- **Claude Code** (terminal-based)
+- **Cursor**
+- **Cline** (VS Code extension)
+- **OpenClaw / NanoClaw**
+- **Qwen Code**
+
+Setting it up with Claude Code is straightforward. You get a coding-plan-specific API key (format: `sk-sp-xxxxx`) and point it at Bailian's Anthropic-compatible endpoint:
+
+```json
+{
+  "env": {
+    "ANTHROPIC_AUTH_TOKEN": "sk-sp-your-key-here",
+    "ANTHROPIC_BASE_URL": "https://coding.dashscope.aliyuncs.com/apps/anthropic",
+    "ANTHROPIC_MODEL": "qwen3.5-plus"
+  }
+}
+```
+
+Drop that in `~/.claude/settings.json` and you're running Qwen through Claude Code. Switch models mid-conversation with `/model model_name`.
+
+<Callout variant="info">The Coding Plan API keys are separate from Bailian's regular pay-as-you-go keys. They're not interchangeable — make sure you grab the right one from the Coding Plan page.</Callout>
+
+There's also an OpenAI-compatible endpoint at `https://coding.dashscope.aliyuncs.com/v1` if your tool expects that format.
+
+## The Fine Print
+
+A few things worth knowing before you subscribe:
+
+**Request limits are tiered.** Lite gives you 1,200 requests per 5 hours, 9,000 per week, and 18,000 per month. For my use case — reviewing code and plans — that's more than enough. If you're using it as your primary coding assistant doing heavy back-and-forth sessions, you might hit the limits on Lite. The Pro tier at 90,000 monthly requests gives a lot more headroom.
+
+**No automation or batch usage.** The plan is explicitly for interactive coding assistance. Using it for backend automation, batch processing, or anything non-interactive is prohibited.
+
+**Main accounts only.** You need a primary Alibaba Cloud account — RAM sub-users aren't supported.
+
+<Callout variant="tip">Here's something important: the terms state that user data is authorized for model improvement during service use. Be mindful of what code you send through these models. I'd recommend against sending proprietary production code or anything with sensitive business logic. Use it for personal projects, learning, and exploration — which is exactly what this price point is designed for.</Callout>
+
+## Who Is This For?
+
+This isn't a replacement for your primary AI coding setup. If you're already productive with Claude Code or Cursor with Anthropic/OpenAI models, keep that as your main tool.
+
+But if you're a developer who:
+
+- Wants to see what Chinese AI models can actually do in 2026
+- Is running OpenClaw or NanoClaw and wants an affordable model backend
+- Wants to experience different models' coding capabilities without setting up separate accounts and billing for each one
+- Is curious about AI coding tools but doesn't want to commit $20/month to find out
+
+Then ¥7.9 for the first month is low enough to just try it. Even at the regular ¥40/month, having eight models in one subscription is unusual — most providers charge per-model or per-token, and setting up separate accounts for each one is a real friction.
+
+## Bottom Line
+
+The Bailian Coding Plan is notable mostly for the bundling model. Eight models from different providers — Qwen, Kimi, GLM, MiniMax — under one subscription with one API key. The pricing is aggressive, especially at the promotional tier. Whether that's sustainable long-term or a user acquisition play is an open question, but for now the value is real.
+
+I want to explore more of these models in the near future. So far, it's been useful just seeing how each model approaches the same code review differently — the variation tells you a lot about where the field is heading.

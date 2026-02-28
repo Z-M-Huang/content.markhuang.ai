@@ -10,7 +10,9 @@
       "tags": ["claude-code", "ai-tools", "code-quality", "multi-ai", "open-source"],
       "published": true,
       "image": null,
-      "readTime": "11 min read"
+      "readTime": "11 min read",
+      "featured": false,
+      "excludeFromFeatured": false
     },
     {
       "slug": "vcp-enforce-code-standards-with-claude-code",
@@ -22,7 +24,9 @@
       "tags": ["claude-code", "security", "ai-tools", "code-quality", "open-source"],
       "published": true,
       "image": null,
-      "readTime": "10 min read"
+      "readTime": "10 min read",
+      "featured": false,
+      "excludeFromFeatured": false
     },
     {
       "slug": "nano-banana-2-fast-cheap-but-better",
@@ -34,7 +38,9 @@
       "tags": ["google", "gemini", "image-generation", "nano-banana", "ai-models"],
       "published": true,
       "image": null,
-      "readTime": "5 min read"
+      "readTime": "5 min read",
+      "featured": false,
+      "excludeFromFeatured": false
     },
     {
       "slug": "permission-syndrome-dangerously-skip-permissions-footgun",
@@ -46,7 +52,23 @@
       "tags": ["claude-code", "security", "docker", "vibe-coding", "vcp"],
       "published": true,
       "image": "https://cdn.markhuang.ai/blog/permission-syndrome-dangerously-skip-permissions-footgun/permission-syndrome.png",
-      "readTime": "7 min read"
+      "readTime": "7 min read",
+      "featured": false,
+      "excludeFromFeatured": false
+    },
+    {
+      "slug": "why-im-using-alibaba-bailian-to-explore-ai-models",
+      "title": "Why I'm Using a $1 Alibaba Subscription to Explore AI Models Beyond Claude and GPT",
+      "description": "Alibaba's Bailian Coding Plan bundles eight AI models — Qwen 3.5 Plus, Kimi K2.5, GLM-5, MiniMax M2.5, and more — for ¥7.9/month (~$1 USD). A look at the pricing, setup, trade-offs, and what it's like using these models for code review alongside Claude and Codex.",
+      "date": "2026-02-28",
+      "category": "ai-llms",
+      "categoryLabel": "AI & LLMs",
+      "tags": ["alibaba", "bailian", "ai-models", "qwen", "ai-coding", "pricing"],
+      "published": true,
+      "image": null,
+      "readTime": "3 min read",
+      "featured": false,
+      "excludeFromFeatured": false
     }
   ]
 }
