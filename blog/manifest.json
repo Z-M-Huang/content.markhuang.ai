@@ -69,6 +69,20 @@
       "readTime": "3 min read",
       "featured": false,
       "excludeFromFeatured": false
+    },
+    {
+      "slug": "the-multi-ai-thesis",
+      "title": "The Multi-AI Thesis",
+      "description": "LLMs confirm their own answers over 90% of the time and have a 64.5% blind spot rate on their own errors. Cross-family multi-AI pipelines — Claude reviewing GPT reviewing Qwen — break the self-review ceiling. The research, the costs, and what actually works.",
+      "date": "2026-03-01",
+      "category": "ai-llms",
+      "categoryLabel": "AI & LLMs",
+      "tags": ["multi-ai", "ai-models", "code-quality", "swarm-intelligence", "ai-coding"],
+      "published": true,
+      "image": "https://cdn.markhuang.ai/blog/the-multi-ai-thesis/hero.png",
+      "readTime": "8 min read",
+      "featured": true,
+      "excludeFromFeatured": false
     }
   ]
 }
