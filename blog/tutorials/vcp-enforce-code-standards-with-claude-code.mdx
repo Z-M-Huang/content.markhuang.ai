@@ -1,8 +1,8 @@
-AI-generated code ships faster, but research tells a sobering story: a **2.74x higher vulnerability rate** compared to human-written code (CodeRabbit 2025), **45% of AI code containing security flaws** (Veracode 2025), and an **8x increase in code duplication** (GitClear 2024). The speed gains evaporate when you spend the next sprint patching what the AI introduced.
+AI-generated code ships faster, but the numbers are not great: a **2.74x higher vulnerability rate** compared to human-written code (CodeRabbit 2025), **45% of AI code containing security flaws** (Veracode 2025), and an **8x increase in code duplication** (GitClear 2024). The speed gains evaporate when you spend the next sprint patching what the AI introduced.
 
-[Vibe Coding Protocol (VCP)](https://github.com/Z-M-Huang/vcp) is an open-source Claude Code plugin that tackles this head-on. It enforces 40 security, architecture, and quality standards across 12 technology scopes — not as a linter you run after the fact, but as a three-layer system that prevents bad code before it reaches disk.
+[Vibe Coding Protocol (VCP)](https://github.com/Z-M-Huang/vcp) is an open-source Claude Code plugin that enforces 40 security, architecture, and quality standards across 12 technology scopes — not as a linter you run after the fact, but as a three-layer system that prevents bad code before it reaches disk.
 
-This tutorial walks through installing VCP, configuring it for your project, and using its key commands with real output examples.
+Below: how to install VCP, configure it for your project, and use its key commands, with real output examples.
 
 ## What VCP Does
 
@@ -342,7 +342,7 @@ WHY this standard exists (1-3 sentences)
 When deviation is acceptable and what safeguards are needed.
 ```
 
-This structure is optimized for LLM consumption — the AI can parse rules, understand reasoning, and apply them contextually rather than following a rigid checklist.
+This structure is written so an LLM can parse rules, understand reasoning, and apply them contextually rather than following a rigid checklist.
 
 ### The Security Gate in Detail
 
@@ -359,16 +359,9 @@ The patterns are deliberately conservative. They catch the most common and dange
 
 ## The Bigger Picture
 
-VCP addresses a fundamental tension in AI-assisted development: AI writes code fast, but speed without standards produces technical debt. Traditional linters catch syntax issues but miss architectural violations, security anti-patterns, and testing deficiencies.
+AI writes code fast, but speed without standards produces technical debt. Traditional linters catch syntax issues but miss architectural violations, security anti-patterns, and testing deficiencies.
 
-VCP's approach is different:
-
-- **Proactive, not reactive** — Rules are injected before code is written, not checked after
-- **Principled, not prescriptive** — Standards explain WHY, allowing the AI to apply judgment
-- **Layered defense** — No single layer catches everything, but together they provide comprehensive coverage
-- **Configurable** — Enable only the scopes and compliance frameworks your project needs
-
-For teams using Claude Code as part of their development workflow, VCP provides the guardrails that keep AI-generated code at the same standard as human-written code — without slowing down the parts that should be fast.
+VCP differs from linters in a few ways: rules are injected before code is written, not checked after. Standards explain *why*, so the AI can apply judgment instead of following a rigid checklist. No single layer catches everything, but the three layers together cover more ground. And you only enable the scopes and compliance frameworks your project actually needs.
 
 ## Quick Reference
 
@@ -387,4 +380,4 @@ For teams using Claude Code as part of their development workflow, VCP provides 
 | `/vcp-root-cause-check` | Verify a bug fix addresses root cause |
 | `/vcp-config [command]` | Manage scopes, compliance, severity, ignore rules |
 
-The source code and full documentation are on [GitHub](https://github.com/Z-M-Huang/vcp). VCP is open-source and actively maintained.
+The source code and full documentation are on [GitHub](https://github.com/Z-M-Huang/vcp).

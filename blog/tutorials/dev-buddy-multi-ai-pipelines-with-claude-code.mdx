@@ -1,8 +1,8 @@
-One AI writing and reviewing its own code is like grading your own homework. Different models miss different things, and self-review tends to confirm assumptions rather than challenge them. Research backs this up — single-model workflows produce code with a **2.74x higher vulnerability rate** (CodeRabbit 2025) and **45% of AI-generated code contains security flaws** (Veracode 2025).
+One AI writing and reviewing its own code has an obvious problem: self-review tends to confirm assumptions rather than challenge them. Research backs this up — single-model workflows produce code with a **2.74x higher vulnerability rate** (CodeRabbit 2025) and **45% of AI-generated code contains security flaws** (Veracode 2025).
 
-[Dev Buddy](https://github.com/Z-M-Huang/vcp) is an open-source Claude Code plugin that solves this by orchestrating **multiple AI models through structured pipelines** — requirements gathering, planning, implementation, and code reviews, each performed by different models with independent perspectives. It's part of the [VCP (Vibe Coding Protocol)](https://github.com/Z-M-Huang/vcp) project and builds on VCP's standards enforcement with multi-AI pipeline orchestration.
+[Dev Buddy](https://github.com/Z-M-Huang/vcp) is an open-source Claude Code plugin that runs **multiple AI models through structured pipelines** — requirements gathering, planning, implementation, and code reviews, each performed by different models with independent perspectives. It's part of the [VCP (Vibe Coding Protocol)](https://github.com/Z-M-Huang/vcp) project and builds on VCP's standards enforcement with multi-AI pipeline orchestration.
 
-This tutorial walks through installing Dev Buddy, configuring pipelines, and running both feature development and bug fix workflows with real output examples.
+Below: installing Dev Buddy, configuring pipelines, and running both feature development and bug fix workflows with real output examples.
 
 ## What Dev Buddy Does
 
@@ -436,7 +436,7 @@ This launches a local web UI with three tabs:
 
 ## How Task-Based Enforcement Works
 
-The key insight behind Dev Buddy is that pipeline stages are enforced through **data constraints**, not instructions.
+Dev Buddy enforces pipeline stages through **data constraints**, not instructions.
 
 Traditional approach:
 ```text
@@ -495,4 +495,4 @@ These artifacts provide a complete audit trail of every decision made during the
 | `/dev-buddy-manage-presets` | Add, update, or remove AI provider presets |
 | `/dev-buddy-config` | Open the web configuration portal |
 
-Dev Buddy is part of the [VCP project](https://github.com/Z-M-Huang/vcp) — the same repo that provides standards enforcement. Together, they ensure AI-generated code meets security and quality standards through both proactive enforcement and multi-perspective review.
+Dev Buddy is part of the [VCP project](https://github.com/Z-M-Huang/vcp) — the same repo that provides standards enforcement. VCP handles proactive rule enforcement; Dev Buddy adds multi-model review on top.

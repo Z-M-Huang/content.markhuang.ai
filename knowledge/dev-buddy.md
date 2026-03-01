@@ -1,6 +1,6 @@
 # Dev Buddy — Multi-AI Pipeline Orchestration
 
-Dev Buddy is a Claude Code plugin (part of the VCP ecosystem) created by Mark Huang that orchestrates multiple AI models through structured development pipelines. It solves a core problem: single-model self-review is unreliable — different models catch different issues.
+Dev Buddy is a Claude Code plugin (part of the VCP ecosystem) created by Mark Huang that orchestrates multiple AI models through structured development pipelines. Single-model self-review is unreliable — different models catch different issues.
 
 ## Why Multiple Models Matter
 
@@ -35,7 +35,7 @@ Multiple RCA agents diagnose the bug independently before a consolidation step m
 
 ## Task-Based Enforcement
 
-Dev Buddy's key insight is using Claude Code's task system for structural enforcement instead of relying on instructions.
+Dev Buddy uses Claude Code's task system for structural enforcement instead of relying on instructions.
 
 Traditional approach: "Run review A, then review B, then implement." The AI can skip steps.
 
@@ -59,4 +59,4 @@ Dev Buddy operates within the governance established by the other two tools:
 - **VCP's Layer 2** blocks any dangerous code that any agent in the pipeline tries to write
 - **Dev Buddy** ensures multiple independent models review every significant change
 
-Together, they form a complete system: constitutional governance (Golden CLAUDE.md) + technical enforcement (VCP) + multi-model validation (Dev Buddy).
+All three are used together on markhuang.ai.

@@ -4,7 +4,7 @@ Golden CLAUDE.md is an open-source ruleset created by Mark Huang that governs ho
 
 ## Why It Exists
 
-AI coding assistants are agreeable by default. They say "you're absolutely right," they guess when they should ask, and they take destructive actions without pausing. Golden CLAUDE.md fixes this by establishing non-negotiable behavioral standards — a constitution for AI-assisted development.
+AI coding assistants are agreeable by default. They say "you're absolutely right," they guess when they should ask, and they take destructive actions without pausing. Golden CLAUDE.md fixes this by setting rules that can't be overridden.
 
 ## The Oath
 
@@ -64,4 +64,4 @@ Golden CLAUDE.md mandates structured communication:
 
 Every piece of code on markhuang.ai was written under Golden CLAUDE.md governance. The rules prevented blind modifications, ensured honest communication about limitations, and enforced the "read first, change second" discipline that keeps a codebase coherent across hundreds of AI-assisted sessions.
 
-Golden CLAUDE.md works alongside VCP (Vibe Coding Protocol) — Golden CLAUDE.md shapes how the AI thinks, VCP enforces what the AI is allowed to write.
+Golden CLAUDE.md works alongside VCP (Vibe Coding Protocol). Golden CLAUDE.md controls AI behavior; VCP blocks dangerous code from being written.

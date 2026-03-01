@@ -1,6 +1,6 @@
 # VCP (Vibe Coding Protocol) — Three-Layer Security & Quality Enforcement
 
-VCP is an open-source Claude Code plugin created by Mark Huang that enforces 40 security, architecture, and quality standards across 12 technology scopes. It exists because AI-generated code has a 2.74x higher vulnerability rate than human-written code (CodeRabbit 2025) and 45% of AI-generated code contains security flaws (Veracode 2025).
+VCP is an open-source Claude Code plugin created by Mark Huang that enforces 40 security, architecture, and quality standards across 12 technology scopes. AI-generated code has a 2.74x higher vulnerability rate than human-written code (CodeRabbit 2025) and 45% of AI-generated code contains security flaws (Veracode 2025).
 
 GitHub: https://github.com/Z-M-Huang/vcp
 
@@ -57,7 +57,7 @@ VCP enforces standards across these areas:
 
 The `--dangerously-skip-permissions` flag in Claude Code removes all permission prompts, letting the AI execute any tool call without user approval. Real incidents have shown AI agents executing destructive commands, wiping home directories, and deleting production databases.
 
-VCP's Layer 2 security gate is a PreToolUse hook — it runs before the tool executes, regardless of permission settings. It's the last line of defense when permissions are skipped.
+VCP's Layer 2 security gate is a PreToolUse hook — it runs before the tool executes, regardless of permission settings. It still blocks dangerous code even when permissions are skipped.
 
 The recommended setup: run `--dangerously-skip-permissions` only inside a Docker container with VCP's security gate enabled. You get the speed of no permission prompts with the safety of pattern-matched blocking, and the blast radius is limited to the container filesystem.
 

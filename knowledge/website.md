@@ -41,6 +41,6 @@ The chat widget streams responses from an LLM with a dynamic system prompt. The 
 - Frontend: vitest (95% line/function/statement, 90% branch coverage) + Playwright E2E (Chromium, Firefox, WebKit)
 - Backend: Go tests with 100% coverage target on core packages (api, config, chat, viewcount)
 
-## What Makes This Site Different
+## How It's Built
 
-The entire site is built and maintained using two open-source projects that Mark created: **Golden CLAUDE.md** (constitutional AI governance) and **VCP** (three-layer security and quality enforcement). Every line of code passed through both systems. See the dedicated knowledge files for details on each.
+The entire site is built and maintained using two open-source projects that Mark created: **Golden CLAUDE.md** (constitutional AI governance) and **VCP** (three-layer security and quality enforcement). All code on this site was written and reviewed using both systems. See the dedicated knowledge files for details on each.
