@@ -1,0 +1,94 @@
+<Callout variant="tip">
+This is **Chapter 5** of *Cross-Family Multi-AI: A New Way of Thinking*. Previous: [Chapter 4: The Monoculture Risk](/blog/cross-family-multi-ai-monoculture-risk). Next: [Chapter 6: The Road Ahead](/blog/cross-family-multi-ai-road-ahead).
+</Callout>
+
+<Callout variant="info">
+**Series:** [Thesis](/blog/the-multi-ai-thesis) · [Ch 1: Why One AI Is Never Enough](/blog/cross-family-multi-ai-why-one-ai-is-never-enough) · [Ch 2: The Science of Ensemble Intelligence](/blog/cross-family-multi-ai-science-of-ensemble-intelligence) · [Ch 3: Industry Evidence](/blog/cross-family-multi-ai-industry-evidence) · [Ch 4: The Monoculture Risk](/blog/cross-family-multi-ai-monoculture-risk) · **Ch 5: The Cost Question** · [Ch 6: The Road Ahead](/blog/cross-family-multi-ai-road-ahead)
+</Callout>
+
+Multi-AI costs more. That's the objection I hear most often, and it's not wrong. Whether the upfront cost increase leads to a lower total cost of ownership depends on the context.
+
+## The upfront cost is real
+
+Multi-agent systems consume roughly 15x more tokens than single chat interactions. After accounting for inter-agent communication, retrieval overhead, and logging, the practical cost multiplier settles around 3-4x. One e-commerce company saw monthly LLM costs jump from $1,200 to $4,800 after enabling multi-agent workflows.
+
+These numbers should not be minimized or hand-waved away. A 3-4x increase in AI spend requires justification. "It's worth it" needs data, not vibes.
+
+![Total cost of ownership comparison](https://cdn.markhuang.ai/blog/cross-family-multi-ai-cost-analysis/tco-comparison.png)
+
+The rest of this chapter makes that case: multi-AI often costs less than single-AI when you account for the full picture. But I want to start by acknowledging that the sticker price is higher, because dismissing the cost concern undermines credibility with anyone who actually manages a budget.
+
+## The rework tax on cheap AI
+
+The upfront cost is not the total cost. Organizations lose approximately 40% of their AI productivity gains to fixing low-quality outputs, according to Workday's 2026 research. For every 10 hours saved by AI assistance, roughly 4 hours go back to correcting, clarifying, or rewriting the output.
+
+This tracks with what I see in practice. GitClear's analysis of AI-assisted code found roughly 4x growth in code clones, code that was generated quickly but created technical debt that someone had to clean up later. Stanford researchers found that developers using AI code assistants wrote less secure code but believed it was more secure. The AI gave them false confidence, and the security vulnerabilities they introduced took senior engineers' time to find and fix.
+
+The pattern is consistent: cheap, fast AI output creates a downstream tax that doesn't appear in the per-token cost. Senior engineers end up reviewing, correcting, and rewriting AI-generated code at senior engineer rates. When you account for human time at $100-200/hr, the $3,600/month savings from using a single cheap model evaporate if you spend 40% of the saved time fixing the output.
+
+A cross-family review step catches many of these problems before they reach a human. The review model from a different family spots the duplicated patterns, the security vulnerabilities, and the logical errors that the generating model systematically misses. The cost of an additional AI call is orders of magnitude cheaper than a senior engineer's debugging time.
+
+## Choosing the right model for the right task
+
+Not all multi-AI is equal, and the first cost optimization is matching model capabilities to task requirements. Using three text-based models for a vision identification task is worse, and more expensive, than using one vision-capable model. The combination matters as much as the number.
+
+This is about avoiding waste. If you need to analyze an image, use a model that handles images natively rather than forcing a text model to work from a description. If you need code generation, use a model that excels at code rather than a general-purpose model that handles code adequately. The wrong model for the task burns tokens on mediocre output that needs to be regenerated or fixed.
+
+Enterprise users are already doing this intuitively. Perplexity's internal data shows that Claude is the most-used model for programming queries on their platform, while other models lead in other task types. Natural task-based routing is already happening, developers choosing models based on perceived strengths, even without formal routing infrastructure.
+
+The cost insight is simple: before adding a second or third model for review, make sure you're using the right model for the primary task. A capable model doing the initial work produces higher-quality output that requires less review effort. [Chapter 6](/blog/cross-family-multi-ai-road-ahead) covers model family strengths and pairings in more strategic depth.
+
+## Execution order
+
+This is an observation from my own practice building multi-AI pipelines with [Dev Buddy](https://github.com/Z-M-Huang/vcp), not a peer-reviewed finding. But the logic is straightforward, and I'd like to see it tested in a controlled setting.
+
+![Execution order comparison](https://cdn.markhuang.ai/blog/cross-family-multi-ai-cost-analysis/execution-order.png)
+
+**Path A (recommended):** A capable, more expensive model does the primary work. A cheaper model from a different family reviews the output. Total: 1 expensive call + 1 cheap call. The expensive model produces high-quality output on the first attempt. The cheaper model catches cross-family blind spots without needing to generate from scratch. Review is a simpler task than generation, so a cheaper model handles it well.
+
+**Path B (common but costly):** A cheap model does the primary work. An expensive model reviews and finds problems. The cheap model fixes the issues. The expensive model re-reviews. Total: 1 cheap call + N expensive review calls. The initial savings from using a cheap generator are eaten by multiple rounds of expensive review and iteration.
+
+In my experience, Path A costs less and produces better output. Generation and review are different tasks with different capability requirements. Generation requires deep domain knowledge and the ability to produce high-quality output from scratch. Review requires the ability to spot errors and blind spots in existing output, a task that cheaper models handle well, especially when they bring a different training perspective.
+
+I want to be clear that this is a pattern I've observed, not a controlled study. The hypothesis (that execution order significantly affects both cost and quality in multi-AI pipelines) would benefit from rigorous benchmarking with identical tasks across both orderings, accounting for total cost including human correction time.
+
+## Task-appropriate scaling
+
+Not everything needs multi-AI. If a cheaper model can handle the task cleanly (summarizing a simple document, answering a factual question, generating boilerplate code) don't invoke the expensive model. Multi-AI is for tasks where correctness matters and blind spots are costly.
+
+![When to use single vs. multi-AI](https://cdn.markhuang.ai/blog/cross-family-multi-ai-cost-analysis/decision-matrix.png)
+
+Microsoft's cascade approach, described in a May 2025 paper, makes this concrete: start with a single agent and escalate to multi-agent only when the task warrants it. Their hybrid approach achieved 1.1-12% accuracy gains with up to 20% cost reduction over either pure single-agent or pure multi-agent approaches. The savings come from not paying the multi-agent overhead for tasks that don't need it.
+
+The decision framework:
+
+- Simple task, low stakes: single model. Fast, cheap, good enough. A boilerplate email doesn't need three models reviewing it.
+- Simple task, high stakes: single model plus one cross-family review. A medical information response is simple but the consequences of errors are severe.
+- Complex task, low stakes: single model with spot-checks. An internal draft that multiple humans will review anyway doesn't need a full pipeline.
+- Complex task, high stakes: full multi-AI pipeline. A financial analysis, a legal contract review, a production code deployment. These justify the overhead.
+
+The mistake is treating multi-AI as all-or-nothing. The cost-effective approach is graduated: use the minimum number of models that matches the risk profile of the task.
+
+## The ROI gap
+
+The broader ROI data on AI maturity illustrates why the cost question isn't just about per-token pricing. These numbers measure AI implementation maturity broadly, not cross-family multi-AI specifically, but they show the magnitude of the gap between doing AI well and doing it poorly.
+
+![ROI gap between mature and immature AI practices](https://cdn.markhuang.ai/blog/cross-family-multi-ai-cost-analysis/roi-gap.png)
+
+Companies investing in mature AI practices (quality assurance, systematic evaluation, structured workflows) report returns of $3.70-$10.30 per dollar invested. Less mature implementations see approximately $0.20 per dollar. Experienced organizations report an average 4.3% ROI with 1.2-year payback periods. Less mature organizations see 0.2% ROI with 1.6-year payback. The gap is 21x.
+
+These are general AI-maturity metrics from IDC and Microsoft research, not multi-AI-specific measurements. But multi-AI is one component of that maturity gap. Organizations that invest in quality (including cross-family review, systematic evaluation, and structured workflows) get dramatically better returns than organizations that optimize only for the lowest per-token cost.
+
+The cheapest AI is not the most cost-effective AI. The most cost-effective AI is the one that produces output you don't have to fix.
+
+<Callout variant="info">
+Research sources: [Workday 2026 AI Productivity Report](https://newsroom.workday.com/2026-01-14-New-Workday-Research-Companies-Are-Leaving-AI-Gains-on-the-Table), [GitClear 2025 Code Quality Analysis](https://www.gitclear.com/ai_assistant_code_quality_2025_research), [Stanford AI Code Security Study](https://arxiv.org/abs/2211.03622), [MAS vs SAS (arXiv:2505.18286)](https://arxiv.org/abs/2505.18286), [IDC/Microsoft AI ROI Research](https://news.microsoft.com/en-xm/2025/01/14/generative-ai-delivering-substantial-roi-to-businesses-integrating-the-technology-across-operations-microsoft-sponsored-idc-report/).
+</Callout>
+
+<Callout variant="tip">
+**Series navigation:** [← Chapter 4: The Monoculture Risk](/blog/cross-family-multi-ai-monoculture-risk) | **Chapter 5** | [Chapter 6: The Road Ahead →](/blog/cross-family-multi-ai-road-ahead)
+</Callout>
+
+<Callout variant="info">
+*Cross-Family Multi-AI* by Mark Huang is licensed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+</Callout>

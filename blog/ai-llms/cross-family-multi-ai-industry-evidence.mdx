@@ -1,0 +1,79 @@
+<Callout variant="tip">
+This is **Chapter 3** of *Cross-Family Multi-AI: A New Way of Thinking*. Previous: [Chapter 2: The Science of Ensemble Intelligence](/blog/cross-family-multi-ai-science-of-ensemble-intelligence). Next: [Chapter 4: The Monoculture Risk](/blog/cross-family-multi-ai-monoculture-risk).
+</Callout>
+
+<Callout variant="info">
+**Series:** [Thesis](/blog/the-multi-ai-thesis) · [Ch 1: Why One AI Is Never Enough](/blog/cross-family-multi-ai-why-one-ai-is-never-enough) · [Ch 2: The Science of Ensemble Intelligence](/blog/cross-family-multi-ai-science-of-ensemble-intelligence) · **Ch 3: Industry Evidence** · [Ch 4: The Monoculture Risk](/blog/cross-family-multi-ai-monoculture-risk) · [Ch 5: The Cost Question](/blog/cross-family-multi-ai-cost-analysis) · [Ch 6: The Road Ahead](/blog/cross-family-multi-ai-road-ahead)
+</Callout>
+
+The ensemble science from [Chapter 2](/blog/cross-family-multi-ai-science-of-ensemble-intelligence) predicts that diverse model combinations should outperform single models. But prediction is cheap. What does the evidence look like in practice?
+
+A transparency note before diving in: the strongest quantitative evidence for cross-family multi-AI comes from software engineering contexts (GitClear, Veracode, Stanford, Blueprint2Code). The industry evidence I'm about to present is real, but it's largely analogical. Healthcare, finance, and legal are using multimodal ensembles and domain-specific model combinations, not direct cross-family LLM routing in the way I've described. The underlying idea (diverse model perspectives improve outcomes) is the same. The implementation differs. I'll be specific about what each industry is actually doing versus what I'm inferring.
+
+![Industry applications of multi-model AI](https://cdn.markhuang.ai/blog/cross-family-multi-ai-industry-evidence/industry-quadrant.png)
+
+## Healthcare
+
+Healthcare has the highest stakes and the strongest evidence for multi-model AI.
+
+PNAS research on human-AI hybrid collectives found that physicians working with multiple LLMs outperformed individual physicians, standalone LLMs, and single-system approaches for differential diagnoses. Diverse perspectives catching different patterns produced better diagnostic accuracy than any single source of expertise.
+
+Beyond LLMs, multimodal AI architectures are already mainstream in medical imaging. Ensembles combining separate models for CT images (architectures like ResNet-50) and clinical reports (language models like RoBERTa) consistently outperform single models for disease classification. Late fusion strategies, where you maintain separate modality-specific models and aggregate their outputs rather than forcing everything through a single architecture, are now standard in radiology, pathology, and genomics.
+
+The healthcare parallel to cross-family multi-AI is analogical: these are different *types* of models (vision vs. language) rather than different *families* of the same type. But the mechanism is the same. Models trained on different data catch different patterns. The CT model spots structural anomalies the clinical report model misses. The report model catches diagnostic patterns the image model can't see. Together, they're more accurate than either alone.
+
+If combining a vision model with a language model catches more than either alone in diagnostics, combining different LLM families (with their different training data and different systematic biases) should catch more in any domain where accuracy matters.
+
+## Finance
+
+Finance has used ensemble methods longer than almost any other industry. Portfolio theory is fundamentally an ensemble argument: diversification across uncorrelated assets reduces risk without proportionally reducing returns. The same math applies to AI model selection.
+
+Li and Tang (2024) built an automated volatility forecasting system combining five algorithms. The ensemble consistently beat individual models across all time horizons for the S&P 100. Gu, Kelly, and Xiu (2020) showed that machine learning ensembles outperformed traditional regression models across 30,000 US equities, published in The Review of Financial Studies.
+
+The Financial Stability Board's 2024 report explicitly identifies AI service provider concentration as a systemic vulnerability for the financial sector. Their concern maps to the same logic that drives portfolio diversification: if a significant portion of financial analysis flows through one AI family, those models share the same blind spots. Everyone gets the same wrong answer, and nobody notices because everyone's model agrees. The concentration risk that regulators have spent decades trying to prevent in banking is now showing up in AI model selection.
+
+Finance already understands that independent, uncorrelated perspectives reduce risk. The ensemble research confirms it works with AI models the same way it works with investment portfolios.
+
+## Legal
+
+The legal industry's AI adoption is accelerating. Thomson Reuters' 2025 data shows that legal GenAI usage nearly doubled year-over-year, with 45% of firms now using or centrally planning AI adoption. For a traditionally conservative profession, that pace is notable.
+
+The trend toward using multiple LLMs for different legal tasks is growing. Contract analysis, case research, document review, and regulatory compliance have different characteristics, and no single model excels at all of them. Advanced legal AI frameworks are beginning to integrate retrieval-augmented generation, knowledge graphs, and multiple model architectures (GPT-4, LLaMA-3, and others) for different task types. Multi-agent LLM systems for legal review are emerging as a distinct research area.
+
+The analogy to cross-examination is natural. The adversarial process in law exists because a single perspective is insufficient for justice. You don't trust one attorney's interpretation of the facts. You don't accept one expert's analysis without challenge. The entire system assumes that independent, adversarial scrutiny produces better outcomes than unchallenged analysis.
+
+AI-assisted legal work should follow the same logic. A contract analysis from one model, reviewed by a model from a different family, is more likely to catch problematic clauses or overlooked obligations than the same model checking its own work. The echo chamber research from [Chapter 2](/blog/cross-family-multi-ai-science-of-ensemble-intelligence) applies directly: same-family review risks belief entrenchment, where the reviewing model reinforces rather than challenges the originating model's interpretation.
+
+## Content moderation
+
+Content moderation is maybe the best illustration of why single-model approaches fail at scale. Errors run in both directions: false positives silence legitimate speech, false negatives let harmful content through.
+
+Major platforms participating in the Digital Trust & Safety Partnership (DTSP) AI working group (Google, Meta, Microsoft, Pinterest, Reddit, TikTok, and others) recommend combining multiple automated tools with human review. Their best practice guidelines recognize that no single model can achieve acceptable accuracy across the full spectrum of content types, languages, and cultural contexts.
+
+Multimodal AI systems combining computer vision with audio analysis, text classification with image recognition, and automated flagging with human review provide more comprehensive coverage than any single approach. A text classifier might miss harmful content embedded in an image. A vision model might miss context that makes an otherwise innocuous image problematic. Combining them covers more of the surface.
+
+## The pattern
+
+![Industry adoption maturity](https://cdn.markhuang.ai/blog/cross-family-multi-ai-industry-evidence/adoption-timeline.png)
+
+As AI usage matures and stakes increase, organizations tend to move from single-model to multi-model approaches. This isn't universal (adoption varies widely by industry, organization size, and risk tolerance) but the trend is consistent.
+
+Finance is the most mature, with ensemble methods embedded in core operations and regulatory frameworks pushing toward provider diversification. Healthcare is growing, driven by diagnostic accuracy requirements and the consequences of errors. Legal is emerging, with adoption nearly doubling year-over-year. Content moderation is still early, but the platform leaders have already concluded that single-model approaches aren't sufficient.
+
+The maturity gradient tracks with stakes. The domains where errors cost the most moved to multi-model approaches first. When the cost of a missed error is high enough, the additional complexity of multi-model systems becomes a rational investment.
+
+The evidence from these industries is analogical rather than identical to the cross-family LLM routing I'm advocating. They're using multimodal ensembles, domain-specific model combinations, and multi-architecture frameworks, not necessarily different LLM families reviewing each other's text outputs. But the mechanism is the same: diverse model perspectives, trained on different data, catch different errors. Whether you're combining a vision model with a language model in radiology or combining Claude with GPT in code review, the mechanism is error decorrelation through diversity.
+
+The evidence that multi-model approaches work is strong. What happens when organizations *don't* adopt them is the subject of [Chapter 4](/blog/cross-family-multi-ai-monoculture-risk).
+
+<Callout variant="info">
+Research sources: [PNAS Human-AI Hybrid Collectives](https://doi.org/10.1073/pnas.2408414122), [FSB 2024 Report on AI and Financial Stability](https://www.fsb.org/2024/11/the-financial-stability-implications-of-artificial-intelligence/), [Thomson Reuters 2025 Legal GenAI Report](https://www.thomsonreuters.com/en/reports/generative-ai-in-professional-services.html), [DTSP AI Best Practices (2024)](https://dtspartnership.org/best-practices-for-ai-and-automation-in-trust-and-safety/), [Li & Tang 2024 Volatility Forecasting](https://doi.org/10.1016/j.eswa.2024.124474), [Gu, Kelly & Xiu 2020 (Review of Financial Studies)](https://doi.org/10.1093/rfs/hhaa009).
+</Callout>
+
+<Callout variant="tip">
+**Series navigation:** [← Chapter 2: The Science of Ensemble Intelligence](/blog/cross-family-multi-ai-science-of-ensemble-intelligence) | **Chapter 3** | [Chapter 4: The Monoculture Risk →](/blog/cross-family-multi-ai-monoculture-risk)
+</Callout>
+
+<Callout variant="info">
+*Cross-Family Multi-AI* by Mark Huang is licensed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+</Callout>

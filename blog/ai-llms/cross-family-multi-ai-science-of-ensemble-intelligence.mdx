@@ -1,0 +1,91 @@
+<Callout variant="tip">
+This is **Chapter 2** of *Cross-Family Multi-AI: A New Way of Thinking*. Previous: [Chapter 1: Why One AI Is Never Enough](/blog/cross-family-multi-ai-why-one-ai-is-never-enough). Next: [Chapter 3: Industry Evidence](/blog/cross-family-multi-ai-industry-evidence).
+</Callout>
+
+<Callout variant="info">
+**Series:** [Thesis](/blog/the-multi-ai-thesis) · [Ch 1: Why One AI Is Never Enough](/blog/cross-family-multi-ai-why-one-ai-is-never-enough) · **Ch 2: The Science of Ensemble Intelligence** · [Ch 3: Industry Evidence](/blog/cross-family-multi-ai-industry-evidence) · [Ch 4: The Monoculture Risk](/blog/cross-family-multi-ai-monoculture-risk) · [Ch 5: The Cost Question](/blog/cross-family-multi-ai-cost-analysis) · [Ch 6: The Road Ahead](/blog/cross-family-multi-ai-road-ahead)
+</Callout>
+
+The idea that groups outperform individuals isn't new. It's one of the oldest findings in decision science. What's new is that it applies to AI models just as well as it applies to humans, and the ingredient that makes it work is the same one it's always been: diversity.
+
+## Wisdom of crowds
+
+In 2004, James Surowiecki published *The Wisdom of Crowds* and identified three conditions that make collective judgment work: diversity of opinion, independence of judgment, and decentralization of decision-making. When these conditions hold, groups consistently outperform individual experts. Even the best individual expert in the group.
+
+This has been replicated in prediction markets, group estimation tasks, and collective decision-making studies. The math is straightforward: averaging over diverse, independent estimates cancels out individual errors. The more uncorrelated the errors, the more they cancel. The idea predates AI, predates computing. It's statistical.
+
+The word that matters is *uncorrelated*. If everyone in the crowd shares the same bias, crowd wisdom fails. If all the estimates skew in the same direction, averaging them just gives you a confident wrong answer. Independence and diversity aren't optional features of ensemble intelligence. They're the mechanism.
+
+This matters for AI because asking "do multiple models help?" is the wrong question. The right question is "under what conditions do they help, and when do they make things worse?"
+
+## Wisdom of the silicon crowd
+
+A 2024 study called "The Wisdom of the Silicon Crowd" tested whether Surowiecki's conditions apply to LLMs. Researchers aggregated deterministic responses from multiple LLMs using median aggregation and found that the collective outperformed 67% of individual model guesses. With relevant context, that number rose to 75%.
+
+![Single model vs. ensemble F1 scores](https://cdn.markhuang.ai/blog/cross-family-multi-ai-science-of-ensemble-intelligence/single-vs-ensemble.png)
+
+The critical finding was that model diversity mattered more than model quality. A pool of diverse mediocre models outperformed a single excellent model. This directly mirrors Surowiecki's conditions.
+
+Content categorization research from 2025 quantified the gap in practical terms. The best single model achieved an F1 score of 0.55. A two-model ensemble reached 0.73, a 33% improvement from adding just one additional model. A 5-10 model ensemble hit 0.80-0.90. The improvement follows diminishing returns, but the early gains from adding two or three diverse models are large.
+
+A note on these F1 numbers: they come from industry and preprint research on content categorization, not peer-reviewed journal publications. The directional finding (ensembles consistently beat single models) is well-established. The specific numbers should be treated as illustrative of the pattern rather than definitive benchmarks.
+
+Medical QA research shows the same thing. LLM ensembles using weighted voting and dynamic model selection on the MedMCQA medical entrance exam dataset showed a +5.98% improvement over the best single model. In medicine, where the difference between 85% and 91% accuracy can mean the difference between a correct and missed diagnosis, these margins matter.
+
+## Why cross-family diversity matters most
+
+Same-family ensembles improve over single models. The data on that is clear. But they hit a ceiling that cross-family ensembles should be able to break through.
+
+The echo chamber research from [The Multi-AI Thesis](/blog/the-multi-ai-thesis) explains why. A 2025 study on multi-agent debate found that when agents share the same model and training data, debate "amplifies confidence in a wrong answer rather than correcting it." The researchers call this "belief entrenchment." A separate study identified two root causes: biased static initial beliefs from shared training data, and homogenized debate dynamics that amplify the majority view regardless of correctness.
+
+![Blind spots across model families](https://cdn.markhuang.ai/blog/cross-family-multi-ai-science-of-ensemble-intelligence/blind-spot-venn.png)
+
+This is where my argument moves from established evidence to inference, and I want to be transparent about that. The echo chamber research proves that same-family ensembles share blind spots. The claim that cross-family diversity *reduces* this problem is a logical extension (different training corpora should produce different systematic errors, different architectures should produce different processing strategies) but it has not been directly measured in a head-to-head comparison. I believe the inference is strong. It remains an inference.
+
+The information-theoretic perspective from 2025 research supports this reasoning: "don't always pick the highest-performing model." Optimal ensemble selection depends on complementarity, not individual performance alone. Two models that make different mistakes are more valuable together than two models that both score higher individually but make the same mistakes.
+
+Blueprint2Code (2025) built a four-agent code generation pipeline (Previewing, Blueprint, Coding, Debugging) and achieved 96.3% pass@1 on HumanEval. Single-model direct generation scored 84.7%. Removing any single agent degraded performance by 14.8-28.9%. The Debugging Agent mattered most: without it, accuracy dropped from 93.5% to 64.6%. Even a same-family multi-agent pipeline dramatically outperforms single-agent setups.
+
+Anthropic's own multi-agent research system, using lead Opus 4 with Sonnet 4 sub-agents (same family, worth noting), outperformed single-agent Opus 4 by 90.2%. Token usage explained 80% of the performance variance. Same-family multi-agent already beats single-agent by a wide margin. My argument is that cross-family should do better still, because you eliminate the shared blind spots that same-family setups retain.
+
+## Model Swarms and the power of weak models
+
+Model Swarms, published at ICML 2025 in the PMLR proceedings, applied particle swarm optimization to LLM experts and found something that challenges the conventional "pick the best model" approach.
+
+![Where the best solutions came from](https://cdn.markhuang.ai/blog/cross-family-multi-ai-science-of-ensemble-intelligence/model-swarms.png)
+
+56.9% of the best-performing final models came from the *bottom half* of the initial pool. Not the top performers. The weaker models. They had latent capabilities that only surfaced through collaborative optimization, capabilities that were invisible in individual benchmarks. Human evaluators preferred swarm outputs over individual expert outputs 70.8% of the time.
+
+You don't need to pick the "best" model. You need to pick the most complementary combination. A model that performs mediocrely on its own might contribute the perspective that catches an error the top-performing model systematically misses.
+
+This maps directly to what I've seen in practice with [Dev Buddy](https://github.com/Z-M-Huang/vcp). Models I wouldn't pick as my primary tool (MiniMax, Qwen) sometimes catch issues that Claude and GPT both miss. Their "weakness" in general benchmarks becomes a strength in review, because their different training produces different failure patterns.
+
+## Human-AI hybrid collectives
+
+PNAS research on human-AI hybrid collectives found that physicians working with multiple LLMs outperformed all-human groups, all-AI groups, and individual experts for differential diagnoses.
+
+This is not about replacing humans with multiple AIs. It's about building the right collective: diverse models plus human judgment. The human provides contextual knowledge and ethical reasoning. The models provide breadth of pattern recognition and consistency. Together, they perform better than either group alone.
+
+![Accuracy across approaches](https://cdn.markhuang.ai/blog/cross-family-multi-ai-science-of-ensemble-intelligence/accuracy-matrix.png)
+
+The optimal configuration isn't "more models" or "better models." It's the right combination of diverse perspectives, human and AI, applied to the problem at hand. Surowiecki's conditions hold. When you violate them by using models from the same family or by letting one model's output dominate, you get belief entrenchment instead of wisdom.
+
+## What the ensemble science says
+
+The research points to a consistent conclusion: diverse, independent perspectives produce better outcomes than individual experts, and the mechanism is error decorrelation. This applies to human crowds, AI model ensembles, and human-AI hybrid collectives.
+
+Cross-family multi-AI maximizes diversity by combining models with the most different training data and architectures available. The research shows that ensembles beat individuals and that diversity is what makes them work. The specific claim that cross-family diversity beats same-family diversity is an inference, not yet a measured result. But it follows directly from the established mechanism.
+
+Whether this holds up in practice, across real industries with real stakes, is what [Chapter 3](/blog/cross-family-multi-ai-industry-evidence) examines.
+
+<Callout variant="info">
+Research sources: [The Wisdom of the Silicon Crowd (2024)](https://arxiv.org/abs/2402.19379), [Blueprint2Code (Frontiers in AI)](https://www.frontiersin.org/journals/artificial-intelligence/articles/10.3389/frai.2025.1660912/full), [Anthropic Multi-Agent Research](https://www.anthropic.com/engineering/multi-agent-research-system), [Model Swarms (ICML 2025)](https://arxiv.org/abs/2410.11163), [Belief Entrenchment in MAD (arXiv:2503.16814)](https://arxiv.org/abs/2503.16814), [FREE-MAD (arXiv:2509.11035)](https://arxiv.org/abs/2509.11035), [LLM Ensemble Medical QA (PMC)](https://pmc.ncbi.nlm.nih.gov/articles/PMC10775333/), [Content Categorization Ensembles (arXiv:2511.15714)](https://arxiv.org/abs/2511.15714), [PNAS Human-AI Hybrid Collectives](https://doi.org/10.1073/pnas.2408414122).
+</Callout>
+
+<Callout variant="tip">
+**Series navigation:** [← Chapter 1: Why One AI Is Never Enough](/blog/cross-family-multi-ai-why-one-ai-is-never-enough) | **Chapter 2** | [Chapter 3: Industry Evidence →](/blog/cross-family-multi-ai-industry-evidence)
+</Callout>
+
+<Callout variant="info">
+*Cross-Family Multi-AI* by Mark Huang is licensed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+</Callout>

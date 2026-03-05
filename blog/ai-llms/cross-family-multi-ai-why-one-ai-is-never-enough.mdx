@@ -1,0 +1,85 @@
+<Callout variant="tip">
+This is **Chapter 1** of *Cross-Family Multi-AI: A New Way of Thinking*. Start with [The Multi-AI Thesis](/blog/the-multi-ai-thesis) for the foundational argument. Next: [Chapter 2: The Science of Ensemble Intelligence](/blog/cross-family-multi-ai-science-of-ensemble-intelligence).
+</Callout>
+
+<Callout variant="info">
+**Series:** [Thesis](/blog/the-multi-ai-thesis) · **Ch 1: Why One AI Is Never Enough** · [Ch 2: The Science of Ensemble Intelligence](/blog/cross-family-multi-ai-science-of-ensemble-intelligence) · [Ch 3: Industry Evidence](/blog/cross-family-multi-ai-industry-evidence) · [Ch 4: The Monoculture Risk](/blog/cross-family-multi-ai-monoculture-risk) · [Ch 5: The Cost Question](/blog/cross-family-multi-ai-cost-analysis) · [Ch 6: The Road Ahead](/blog/cross-family-multi-ai-road-ahead)
+</Callout>
+
+Every high-stakes profession already figured this out.
+
+Medicine requires second opinions before major procedures. Law built the entire adversarial system around the idea that one perspective is insufficient. Scientific papers go through peer review by independent researchers. Finance diversifies portfolios specifically because concentrating bets is dangerous.
+
+AI is one of the few domains where people routinely skip this step.
+
+![Why One AI Is Never Enough](https://cdn.markhuang.ai/blog/cross-family-multi-ai-why-one-ai-is-never-enough/hero.png)
+
+## The second opinion principle
+
+One model writes the code, the same model reviews it. One model drafts the contract analysis, and the same model checks its own work. We've known for centuries that self-review doesn't work in high-stakes contexts, but somehow we decided AI was the exception.
+
+It's not. [The Multi-AI Thesis](/blog/the-multi-ai-thesis) laid out the numbers: LLMs have an average 64.5% blind spot rate on their own errors. GPT-4 locates only 52.9% of reasoning errors in chain-of-thought traces. These aren't edge cases. They're the baseline behavior.
+
+The self-review problem is structural, not a bug that will get patched. Models assign lower perplexity to their own outputs. They literally find their own writing more familiar and rate it more favorably. RLHF training makes this worse by rewarding confidence over accuracy. A "second opinion" from the same model, or even a different model in the same family, isn't really a second opinion. It's an echo.
+
+This isn't unique to AI. Surgeons don't review their own pathology slides. Lawyers don't judge their own cases. Scientists don't peer-review their own papers. Independent verification from a different perspective catches errors that self-review misses. The idea is older than computing.
+
+## The market already knows
+
+The enterprise data tells a clear story. According to a16z's 2025 enterprise AI survey, 37% of enterprises now use five or more AI models in production. Only about 20% rely on a single model. The market is moving toward multi-model, but most organizations are doing it ad-hoc, without a framework or any principled reason for which models to combine.
+
+![Enterprise AI Model Usage, 2025](https://cdn.markhuang.ai/blog/cross-family-multi-ai-why-one-ai-is-never-enough/enterprise-ai-usage.png)
+
+Perplexity's enterprise data tells a similar story. Their internal usage numbers show significant model fragmentation, with no single model dominating. This is company-reported data, not independently audited, but enterprises are already voting with their API keys.
+
+The interesting thing is that most of these organizations stumbled into multi-model usage organically. A developer likes Claude for code. A product manager prefers GPT for writing. A data team uses an open-source model for cost reasons. The behavior is ahead of the articulation. People are doing multi-AI without calling it that.
+
+What they're not doing yet is using it *deliberately*. They're not picking models based on complementary blind spots. They're not building cross-family review into their workflows. They're just using whatever feels best for the task at hand. That's Level 1 on the maturity model I'll describe in [Chapter 6](/blog/cross-family-multi-ai-road-ahead). It's a start, but it leaves most of the value on the table.
+
+## The cognitive lock-in problem
+
+94% of IT leaders express concern about vendor lock-in with their AI providers (Parallels 2026 survey, focused on end-user computing, narrow sample, but the sentiment tracks). Most of them are thinking about contracts and pricing leverage. The deeper lock-in is cognitive.
+
+When your entire team uses one AI family, its assumptions become your assumptions. Its blind spots become invisible, not because they're small, but because nothing in your workflow challenges them. A developer who uses Claude for everything starts thinking in Claude's patterns. A legal team that uses GPT for all contract review starts missing what GPT systematically misses.
+
+This isn't about vendor contracts. It's about what happens when one model's perspective becomes the unquestioned default. [Chapter 4](/blog/cross-family-multi-ai-monoculture-risk) digs into why this is more dangerous than most people realize.
+
+## Defining "cross-family"
+
+Before going further, I want to define what I mean by "cross-family," because this distinction matters for the entire series.
+
+**Same family** means models from the same provider that share training data, architectural lineage, and development methodology. Claude Sonnet and Claude Opus are the same family. GPT-4 and GPT-4o are the same family. They may differ in size and speed, but they share fundamental assumptions about the world.
+
+**Cross-family** means models from different providers that are likely to have different training corpora and different architectures. Claude and GPT and Qwen are cross-family. They were built by different companies, trained on different data, and designed with different priorities.
+
+**Cross-provider but same base** is the gray area. Two fine-tuned versions of LLaMA from different companies are technically cross-provider, but they share an architectural foundation and potentially overlapping training data. Better than same-family, but not as orthogonal as fully independent families.
+
+A caveat on closed-source models: we can't verify training data or architecture details directly for proprietary models like Claude, GPT, or Gemini. The cross-family assumption is probabilistic. Different companies building models independently are *likely* to produce different blind spots, but it's not something we can prove without access to training data. For open-source models, the picture is clearer.
+
+![Independent review across fields](https://cdn.markhuang.ai/blog/cross-family-multi-ai-why-one-ai-is-never-enough/independent-review.png)
+
+The value comes from training data diversity and architectural diversity, not just having different brand names on the API key. Using three different Claude models is not cross-family. Using Claude, GPT, and Qwen is.
+
+## What this series covers
+
+This series makes the case for cross-family multi-AI as a way of thinking, not a product recommendation. Each chapter stands alone but builds a progressive argument:
+
+- [Chapter 2: The Science of Ensemble Intelligence](/blog/cross-family-multi-ai-science-of-ensemble-intelligence) covers why diverse perspectives produce better outcomes, backed by ensemble research and information theory.
+- [Chapter 3: Industry Evidence](/blog/cross-family-multi-ai-industry-evidence) looks at healthcare, finance, legal, and content moderation.
+- [Chapter 4: The Monoculture Risk](/blog/cross-family-multi-ai-monoculture-risk) examines what goes wrong with single-vendor AI dependency.
+- [Chapter 5: The Cost Question](/blog/cross-family-multi-ai-cost-analysis) asks when multi-AI pays for itself, and when it doesn't.
+- [Chapter 6: The Road Ahead](/blog/cross-family-multi-ai-road-ahead) gets practical about how to start.
+
+Much of the strongest quantitative evidence comes from software engineering contexts, but the argument applies anywhere AI output matters. Independent verification from diverse sources catches errors that self-review misses. That's the thesis.
+
+<Callout variant="info">
+Research sources: [Self-Correction Bench (arXiv:2507.02778)](https://arxiv.org/abs/2507.02778), [LLMs Cannot Find Reasoning Errors (ACL 2024)](https://arxiv.org/abs/2311.08516), [a16z 2025 Enterprise AI Survey](https://a16z.com/ai-enterprise-survey-2025/), [Parallels 2026 State of Cloud Computing Survey](https://www.globenewswire.com/news-release/2026/02/17/3239335/0/en/94-of-IT-Leaders-Fear-Vendor-Lock-In-as-AI-Reality-Check-Forces-EUC-Strategy-Reset-Parallels-Survey-Finds.html), [Flexera 2025 State of the Cloud](https://www.flexera.com/blog/cloud/cloud-computing-trends/), [Veracode 2025 GenAI Security Report](https://www.veracode.com/resources/analyst-reports/2025-genai-code-security-report/).
+</Callout>
+
+<Callout variant="tip">
+**Series navigation:** [The Multi-AI Thesis](/blog/the-multi-ai-thesis) | **Chapter 1** | [Chapter 2: The Science of Ensemble Intelligence →](/blog/cross-family-multi-ai-science-of-ensemble-intelligence)
+</Callout>
+
+<Callout variant="info">
+*Cross-Family Multi-AI* by Mark Huang is licensed under [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+</Callout>
