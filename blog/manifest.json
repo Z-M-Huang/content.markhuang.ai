@@ -167,6 +167,20 @@
       "readTime": "12 min read",
       "featured": false,
       "excludeFromFeatured": false
+    },
+    {
+      "slug": "agent-as-feature-what-happens-when-ai-replaces-your-backend-logic",
+      "title": "Agent as Feature: What Happens When AI Replaces Your Backend Logic",
+      "description": "Gartner predicts 40% of enterprise apps will embed AI agents by 2026. The 'agent as feature' pattern replaces deterministic controllers with reasoning agents. An exploration of what this means for backend architecture and why the potential is real.",
+      "date": "2026-03-10",
+      "category": "ai-llms",
+      "categoryLabel": "AI & LLMs",
+      "tags": ["ai-agents", "backend-architecture", "agentic-ai", "software-architecture"],
+      "published": true,
+      "image": null,
+      "readTime": "10 min read",
+      "featured": true,
+      "excludeFromFeatured": false
     }
   ]
 }

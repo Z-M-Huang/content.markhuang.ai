@@ -1,0 +1,178 @@
+A webhook fires. A user uploads a receipt to your expense app. In 2024, that request hits a router, a controller validates the payload, a service layer extracts fields with regex or a templated parser, stores the result. Twenty lines of field mapping. Forty lines of edge-case handling. A hundred lines of "what if the receipt is in Japanese."
+
+In 2026, that same webhook routes to an agent. The agent looks at the receipt, understands it's a dinner expense, extracts the vendor, amount, tax, tip, categorizes it, flags a policy violation because the amount exceeds the per-meal limit, and writes the record. No controller. No parser. No hardcoded field mapping.
+
+Gartner predicts up to 40% of enterprise apps will include task-specific AI agents by the end of 2026, up from less than 5% in 2025. This feels like a real shift to me, and I'm planning to attempt it.
+
+This post is me thinking through what "agent as feature" actually means, where it breaks down, and why I believe the potential is worth pursuing.
+
+![Agent as Feature](https://cdn.markhuang.ai/blog/agent-as-feature-what-happens-when-ai-replaces-your-backend-logic/hero.png)
+
+## The traditional backend is a decision tree
+
+Every backend feature you've ever built follows the same shape:
+
+```
+Request → Router → Controller → Service → Database → Response
+```
+
+Every feature is a code path. Every edge case is an `if` statement. New business requirement? Another branch in the tree. The backend does exactly what the code says, nothing more.
+
+That's the strength. You can test it, audit it, predict exactly what it will do at 3am on a Saturday when something breaks. The downside is that changing behavior means changing code, and anyone who's touched a 2,000-line routing function knows how that goes.
+
+Take a customer support ticket system. The routing logic alone — priority detection, department assignment, escalation rules, SLA calculation — might be thousands of lines of business logic. It took months to write. It requires constant maintenance as rules change. And every time someone says "can we also check if the customer is enterprise tier and route differently," that's another branch in a tree that's already hard to read.
+
+We built software this way because it was the only option. Computers couldn't reason. They could only follow instructions. So we wrote elaborate decision trees to encode every possible decision path.
+
+But what if the computer could reason?
+
+![Traditional flow vs Agent flow](https://cdn.markhuang.ai/blog/agent-as-feature-what-happens-when-ai-replaces-your-backend-logic/traditional-vs-agent-flow.png)
+
+## What if the feature was an agent?
+
+Instead of routing a request to a controller that walks a decision tree, you route it to an agent that reasons about intent and executes dynamically.
+
+The idea of treating agents as backends came from Go Wombat. Controllers and routers get replaced by agents that reason about "intents." The client doesn't call a specific endpoint for a specific action. It sends what it wants to happen, and the agent figures out how. Their takeaway: the hardest part isn't building the agent, it's drawing the boundary between what the agent should decide and what deterministic code should handle.
+
+Dan Shipper at Every.to said something that stuck with me: "each feature of the app is a prompt to the agent that names the result to achieve." You stop writing imperative code and start writing declarative goals.
+
+The shape of the code changes:
+
+```
+// Traditional: extract expense fields from receipt
+const vendor = extractField(receipt, 'vendor', vendorPatterns);
+const amount = parseAmount(extractField(receipt, 'amount', amountPatterns));
+const category = categorize(vendor, amount, merchantDB);
+const violations = checkPolicy(amount, category, userTier);
+// ... and so on
+
+// Agent-backed: describe the goal
+const result = await agent.process({
+  task: "Extract expense information from this receipt",
+  input: receipt,
+  schema: ExpenseSchema,
+  tools: [db.write, policy.check, notification.send]
+});
+```
+
+I'm simplifying here. Real agent-backed features still need guardrails, schema validation, error handling. But the code looks different. You're telling it what you want instead of spelling out every step.
+
+<Callout variant="tip">
+AI handles the reasoning. Deterministic code handles the governance. The backend doesn't disappear, it changes what it's responsible for.
+</Callout>
+
+I hit this realization while building OpenClaw. I was originally trying to enforce pipelines with code and call AI inside that code — wrapping the agent in rigid control flow. But LLM output isn't always enforceable within rigid constraints. The more I constrained it, the more I was fighting the tool instead of using it. So I flipped the thinking: let the agent drive. Give it the goal and the tools, and let it figure out the path. Give it room to figure things out.
+
+## The webhooks + agents pattern
+
+So what does this actually look like in practice? The pattern:
+
+1. External systems push events via webhooks
+2. Events route to agents instead of controller functions
+3. The agent receives the payload, reasons about what needs to happen, and executes through defined tools
+
+```
+Webhook Event
+    ↓
+Event Router
+    ↓
+Agent (reasons about intent)
+    ├── Tool: Database write
+    ├── Tool: External API call
+    ├── Tool: Send notification
+    └── Tool: Escalate to human
+```
+
+![Webhooks and agents pattern](https://cdn.markhuang.ai/blog/agent-as-feature-what-happens-when-ai-replaces-your-backend-logic/webhooks-agents-pattern.png)
+
+The agent decides which tools to call and in what order. It's not following a predetermined script. It's reasoning about the specific situation.
+
+The shape is familiar if you've worked with event-driven architecture. The difference is the consumer. As Everworker.ai puts it, "systems push events as they happen, and AI Workers respond instantly." Same push-based pattern, but instead of a deterministic handler on the other end, it's an agent that reasons about what to do.
+
+There's a framework called Motia that takes this seriously. Agents and API endpoints are the same primitive. Whether a "step" in your backend is a function or an agent is an implementation detail.
+
+The broader picture, as InfoQ put it: "AI Agents Become Execution Engines While Backends Retreat to Governance." MCP (Model Context Protocol) is making this easier to standardize, giving agents a common protocol for tool and data access. You could do this before MCP with custom APIs, but MCP is doing for agent-tool interaction what HTTP did for browsers and servers.
+
+LangGraph handles stateful agent workflows. CrewAI does multi-agent orchestration. From what I've seen, these are moving past the experiment stage. Teams are starting to build real systems on them.
+
+![Agent surrounded by governance guardrails](https://cdn.markhuang.ai/blog/agent-as-feature-what-happens-when-ai-replaces-your-backend-logic/governance-guardrails.png)
+
+## The backend becomes a governance layer
+
+If agents handle the reasoning and execution, what does the backend actually do?
+
+It becomes the governance layer. Auth, rate limiting, audit logging, schema validation, tool access control. The backend defines what agents *can* do (which tools, which scopes, which schemas) but not what they *will* do. That part is the agent's reasoning.
+
+An agent without governance is the `--dangerously-skip-permissions` of backend architecture. I wrote about that before. The flag that gives full autonomy with zero guardrails, and it works fine right up until an agent writes to the wrong database or sends a notification to the wrong user.
+
+Simon Willison coined the "Lethal Trifecta" for this: untrusted inputs meeting privileged access meeting external actions. When you've got all three in the same system without controls, you have a problem. Agent-backed features can easily end up with all three if you're not careful.
+
+<Callout variant="info">
+Simon Willison's "Lethal Trifecta" for AI agents: untrusted inputs + privileged access + external actions. Any agent-backed feature without explicit controls for all three is a security risk. Many MCP servers are "vibe-coded" with little concern for security. Source: [Korny Sietsma on martinfowler.com — Agentic AI Security](https://martinfowler.com/articles/agentic-ai-security.html)
+</Callout>
+
+Here's what actually scares me about this pattern. Your agent has `db.write` as a tool. That's full write access to production. One bad inference, garbage rows. API calls are the same problem — the agent hits external services with your credentials, and you're the one explaining it when something goes sideways.
+
+I'd treat the agent like any untrusted service. Don't hand it a raw database connection. Put a wrapper in front that validates writes against a schema, enforces row-level permissions, logs what happened. What was the agent trying to do, what actually got written, who triggered it. Make the default connection read-only. Route writes through a separate service that only takes structured input. High-stakes mutations go through an approval queue. Audit trail on every data change, no exceptions — when the agent screws up, that log is the only thing telling you what went wrong.
+
+The governance layer has to answer real questions: what gets logged, what needs human approval before executing, and what happens when the agent gets it wrong. If you don't have a rollback plan, you don't have governance.
+
+## The boundary problem
+
+The hardest design question in agent-as-feature architecture: where do you draw the line between what the agent decides and what deterministic code handles?
+
+Not everything should be an agent. Auth, billing, database migrations — these need to be deterministic. You need to be able to audit them and predict their behavior exactly.
+
+For these critical paths, AI can help, but it can't be the determining state. AI is a tool — it can help make your life easier, but for decisions that have real-world consequences with no room for error, you should not let it decide. Human should always be a gate on the things that matter most.
+
+CockroachDB has a post on this: "Building agentic applications means deliberately inviting non-determinism into your system." That's a real cost. When you can't predict what the system will do, how do you test it? A classic unit test won't tell you if the agent made a good decision. There are eval frameworks now (LangSmith does trajectory-level and step-level evals), but it's a different discipline than what most backend teams are used to. And classic distributed systems problems like dual writes don't go away just because an agent is involved.
+
+I've been thinking about this in three rough territories:
+
+| Territory | Examples | Why |
+|-----------|----------|-----|
+| **Agent** | Natural language understanding, multi-step reasoning, dynamic routing, pattern recognition in unstructured data | Ambiguity is the feature, not a bug |
+| **Deterministic** | Financial calculations, access control, data integrity constraints, compliance rules | Must be exact, auditable, reproducible |
+| **Hybrid** | Agent categorizes an expense, deterministic code enforces the approval policy | Agent recommends, code validates and executes |
+
+Gartner projects over 40% of agentic AI projects may be canceled by the end of 2027 — escalating costs, unclear business value, inadequate risk controls. I suspect most cancellations will be projects that drew the boundary wrong — giving agents too much authority where non-determinism becomes a liability, or too little where the agent is just a wrapper adding latency with none of the benefits.
+
+<Callout variant="tip">
+A useful heuristic: if you'd want a human to follow an exact checklist for this task, use deterministic code. If you'd want a human to use judgment, that's agent territory.
+</Callout>
+
+![Boundary map: agent territory vs deterministic territory](https://cdn.markhuang.ai/blog/agent-as-feature-what-happens-when-ai-replaces-your-backend-logic/boundary-map.png)
+
+## Why I think the potential is real
+
+The "old approach is fine" argument made sense when computers couldn't reason. We built elaborate decision trees because that was the only way to encode decisions into software. If that's changed, the architecture should change too. If you had a system that could actually understand intent and reason about context, you wouldn't build it the same way.
+
+Srinivas Rao disagrees strongly. He thinks multi-agent frameworks confuse conversation with coordination, calling it "architectural stupidity at scale." His counter-proposal: code for execution, language models for decisions, files for coordination. He's wrong about agents not working, but he has a point about coordination. Agents shouldn't be chatting with each other. They should be calling tools through proper protocols.
+
+The tooling is getting there. MCP gives agents a standard protocol for tool interaction. Motia treats agents as first-class backend primitives. Even just a year ago, building an agent-backed feature felt like gluing together a dozen libraries and hoping they played nice. Today there are frameworks purpose-built for this.
+
+Then there's the testing question. Until now, features get tested with unit tests, Playwright, integration suites. That doesn't map cleanly to agent-backed features. Classic unit tests won't tell you if the agent's reasoning was sound. I think the answer is to create skills to test skills. Use one agent to validate another agent's reasoning. Same insight behind cross-family multi-AI review: different models catch different blind spots. The testing approach has to shift alongside the architecture.
+
+I'm planning to attempt this in a real system, not just a proof of concept. I want to see what actually happens when the backend stops being the brain and starts being the guardrails.
+
+The tradeoffs are real. Higher latency. Higher cost per request. Debugging is harder, and there's no consensus standard yet for measuring agent reliability in production the way we measure API uptime. Teams are tracking success rates, running online evals, doing human review — but it's early. I don't think these are dead ends, though. They're engineering problems. Getting it to work well at scale is the hard part.
+
+## What I'm watching
+
+The one I keep checking is MCP adoption. If MCP becomes the standard protocol for agent-tool interaction the way HTTP did for the web, this whole architecture gets much simpler.
+
+Inference costs matter too. Agent-backed features cost more per request right now, but that gap is closing fast.
+
+Then there's the reliability question, which nobody has really answered yet. Until we can say "this agent-backed feature has 99.5% correctness" the same way we say "this API has 99.9% uptime," adoption stays cautious. And Gartner's 40%+ cancellation prediction for agentic projects by 2027? If those failures cluster around specific patterns, that's useful data for the rest of us.
+
+---
+
+The backend doesn't disappear. It shifts from executing logic to governing what agents can do.
+
+I don't know if this works for everything. Probably doesn't. But for the features where you spent months building branching logic that never quite captured what you actually wanted? Those are the interesting ones. That's where I'm placing my bet.
+
+I'm building this now. Will share what breaks.
+
+<Callout variant="info">
+Sources if you want to dig deeper: [Go Wombat's post on Agent as a Backend](https://gowombat.team/blog/posts/agent-as-a-backend), [Dan Shipper's piece at Every.to](https://every.to/chain-of-thought/agent-native-architectures-how-to-build-apps-after-the-end-of-code), [that InfoQ article on execution engines](https://www.infoq.com/news/2025/10/ai-agent-orchestration/), the [Everworker.ai webhooks post](https://everworker.ai/blog/connect-ai-agents-with-webhooks), plus the [Gartner report](https://www.gartner.com/en/newsroom/press-releases/2025-08-26-gartner-predicts-40-percent-of-enterprise-apps-will-feature-task-specific-ai-agents-by-2026-up-from-less-than-5-percent-in-2025), [CockroachDB on non-determinism](https://www.cockroachlabs.com/blog/agentic-applications-deterministic-foundations/), and [Fowler on agentic security](https://martinfowler.com/articles/agentic-ai-security.html). [Motia](https://www.motia.dev/) is worth a look too.
+</Callout>
