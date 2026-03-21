@@ -181,6 +181,20 @@
       "readTime": "10 min read",
       "featured": true,
       "excludeFromFeatured": false
+    },
+    {
+      "slug": "dont-you-think-your-ai-is-too-optimistic",
+      "title": "Don't You Think Your AI Is Too Optimistic?",
+      "description": "RLHF can reward agreement over accuracy, turning AI into a source of sugar-coated bullets — validation that hides failure modes. How persistent adversarial rules change the default from flattery to honest challenge.",
+      "date": "2026-03-21",
+      "category": "ai-llms",
+      "categoryLabel": "AI & LLMs",
+      "tags": ["ai-sycophancy", "rlhf", "adversarial-ai", "ai-coding", "code-quality"],
+      "published": true,
+      "image": "https://cdn.markhuang.ai/blog/dont-you-think-your-ai-is-too-optimistic/hero.webp",
+      "readTime": "8 min read",
+      "featured": true,
+      "excludeFromFeatured": false
     }
   ]
 }
