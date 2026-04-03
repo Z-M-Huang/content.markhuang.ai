@@ -195,6 +195,20 @@
       "readTime": "8 min read",
       "featured": true,
       "excludeFromFeatured": false
+    },
+    {
+      "slug": "automation-without-intention-is-just-faster-chaos",
+      "title": "Automation Without Intention Is Just Faster Chaos",
+      "description": "Three failed pipeline architectures, a lesson about backpressure, and the UAT gate that finally made multi-AI vibe coding work. An experience-sharing post about what broke, what survived, and why knowing what you want matters more than the tools you use.",
+      "date": "2026-04-03",
+      "category": "ai-llms",
+      "categoryLabel": "AI & LLMs",
+      "tags": ["vibe-coding", "multi-ai", "backpressure", "dev-buddy", "ai-coding", "experience"],
+      "published": true,
+      "image": "https://cdn.markhuang.ai/blog/automation-without-intention-is-just-faster-chaos/hero.webp",
+      "readTime": "10 min read",
+      "featured": true,
+      "excludeFromFeatured": false
     }
   ]
 }
