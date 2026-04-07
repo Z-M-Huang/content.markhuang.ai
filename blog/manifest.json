@@ -221,7 +221,7 @@
       "published": true,
       "image": "https://cdn.markhuang.ai/blog/chinese-token-myth/hero.webp",
       "readTime": "8 min read",
-      "featured": true,
+      "featured": false,
       "excludeFromFeatured": false
     }
   ]
