@@ -1,3 +1,6 @@
+# Secrets
+.env
+
 # Tool/IDE configs
 .claude
 .vcp

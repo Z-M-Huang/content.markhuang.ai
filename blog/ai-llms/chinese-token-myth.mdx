@@ -1,0 +1,120 @@
+![Editorial illustration of two flowing ribbons — one of Chinese brushstrokes, one of Roman letterforms — dissolving into colored tiles of different sizes](https://cdn.markhuang.ai/blog/chinese-token-myth/hero.webp)
+
+There's a claim floating around the Chinese-speaking internet that goes something like this: "Use Chinese to interact with LLMs. Each character carries more meaning, so you'll use fewer tokens and save money." I've seen it on Zhihu, in WeChat articles, on tech forums. It sounds right. Chinese is more compact. Fewer characters for the same idea. Must be more efficient.
+
+As a native Mandarin speaker, I was skeptical. So I tested it.
+
+## The test
+
+I took two files from the [Golden CLAUDE.md](https://github.com/Z-M-Huang/golden-CLAUDE.md) repository: `CLAUDE.md` in English and `CLAUDE.zh.md`, a Chinese translation of the same content. Same meaning, different language. Then I ran both through every tokenizer I could get my hands on.
+
+The English version: 5,474 characters, 5,514 bytes.
+The Chinese version: 2,452 characters, 5,634 bytes.
+
+Chinese has 55% fewer characters. But it uses *more* bytes, because each Chinese character takes 3 bytes in UTF-8 while ASCII English takes 1. Already not a great sign for the "Chinese is smaller" argument.
+
+Then I counted tokens.
+
+| Tokenizer | EN tokens | ZH tokens | Difference |
+|---|---|---|---|
+| GPT-4o / GPT-5.x (o200k_base) | 1,196 | 1,479 | +23.7% |
+| GPT-4 / GPT-3.5 (cl100k_base) | 1,200 | 2,001 | +66.8% |
+| GPT-3 era (p50k_base) | 1,329 | 3,753 | +182.4% |
+
+Chinese uses *more* tokens. On the oldest tokenizer, almost three times more. On the newest, still a quarter more. The direction never changes.
+
+## But what about Chinese models?
+
+The obvious counter: maybe Western models just handle Chinese badly. What about Qwen, GLM, DeepSeek? These are Chinese-origin models. Their tokenizers were trained on a lot more Chinese text.
+
+I tested those too.
+
+| Tokenizer | EN tokens | ZH tokens | Difference |
+|---|---|---|---|
+| Qwen 2.5 | 1,203 | 1,351 | +12.3% |
+| GLM-4 | 1,202 | 1,307 | +8.7% |
+| DeepSeek-V2 | 1,324 | 1,427 | +7.8% |
+
+The gap gets a lot smaller. Down from +24% on GPT-4o to +8% on DeepSeek. But it never flips. English still wins.
+
+To make sure these offline tokenizer numbers hold up in the real world, I sent the same files to live APIs through Alibaba's [Bailian](https://bailian.console.aliyun.com/) platform and checked the actual `prompt_tokens` each model reported back.
+
+| Model (live API) | EN tokens | ZH tokens | Difference |
+|---|---|---|---|
+| Qwen 3.5 Plus | 1,272 | 1,363 | +7.2% |
+| GLM-5 | 1,205 | 1,310 | +8.7% |
+
+The API counts include chat-template overhead, so the raw numbers are higher than the offline tests. But the relative difference tells the same story.
+
+![Mid-century infographic with three groups of colored blocks — the gap between red and blue stacks narrows from left to right but never closes](https://cdn.markhuang.ai/blog/chinese-token-myth/tokenizer-gap.webp)
+
+## Why English wins: how tokenization works
+
+LLMs don't read characters. They read tokens, chunks of text that the model learned to recognize during training. The algorithm that splits your text into tokens is called BPE (Byte-Pair Encoding). Here's the short version:
+
+1. Start with all individual bytes (256 base tokens)
+2. Find the most frequent pair of adjacent tokens in the training corpus
+3. Merge that pair into a new single token
+4. Repeat 50,000 to 200,000 times
+
+There's a step before this that matters: a regex pattern splits the input into chunks, roughly one per word or punctuation mark. BPE merges happen within those chunks, not across them. That's why whole English words can become single tokens. The regex hands BPE a clean word-shaped input to work with.
+
+The result is a vocabulary where common patterns collapse into single tokens. Training data for Western models is predominantly English, so English patterns get most of the vocabulary budget.
+
+Here's what that looks like:
+
+```
+English: "The golden rules apply to every session"
+Tokens:  [The] [golden] [rules] [apply] [to] [every] [session]
+Count:   7 tokens
+
+Chinese: "金规适用于每个会话"
+Tokens:  [金] [规] [适] [用于] [每] [个] [会] [话]
+Count:   8 tokens
+```
+
+In the English sentence, the space-prefixed word `" golden"` becomes a single token. The tokenizer saw that pattern enough times during training to merge it all the way down.
+
+The Chinese side is more fragmented, but not entirely character-by-character. `用于` merged into one token. The `o200k_base` vocabulary actually contains over 3,000 multi-character CJK tokens, which is way more than older tokenizers had. But most characters still stand alone. There are just too many possible CJK character combinations for the vocabulary to cover.
+
+None of this means Chinese is a bad language for computers. It means the people who built these tokenizers gave most of the vocabulary budget to English, because that's what their training data looked like.
+
+## The three metrics people confuse
+
+The misconception sticks around because people mix up three different measurements.
+
+Characters: Chinese wins. "永远不要假设一个库存在" is 11 characters. "Never assume a library exists" is 29 characters with spaces. This is what people see, and this is what drives the intuition.
+
+Bytes: roughly equal. Chinese characters take 3 bytes each in UTF-8; English letters take 1. The same content ends up at similar byte counts (5,514 EN vs 5,634 ZH in this test).
+
+Tokens: English wins. BPE merges common byte sequences into single tokens. English words merge aggressively because they dominate training data. Chinese characters mostly stay separate.
+
+![Conceptual triptych — short bold Chinese marks beside longer Roman letters, two equal stacks of books, and two bowls of tiles where English has fewer larger pieces](https://cdn.markhuang.ai/blog/chinese-token-myth/misconception.webp)
+
+The claim "Chinese is more token-efficient" takes the character observation and assumes it carries over to tokens. It doesn't. Character count is a poor proxy for token count. They're driven by completely different things.
+
+## Getting better, but slowly
+
+There is some good news. Look at the progression of OpenAI's tokenizers:
+
+- **p50k_base** (GPT-3 era, 39 CJK tokens in vocabulary): Chinese uses +182% more tokens
+- **cl100k_base** (GPT-4, 754 CJK tokens): Chinese uses +67% more tokens
+- **o200k_base** (GPT-4o, 5,776 CJK tokens): Chinese uses +24% more tokens
+
+From 39 CJK tokens to 5,776. The gap is clearly closing. Chinese-origin models like Qwen and DeepSeek push it down further, to around +8%.
+
+But getting less bad is not the same as being better. Even the best case I found, Qwen 3.5 Plus at +7.2%, still favors English.
+
+## What this means if you're choosing a language for prompts
+
+On GPT-4o, Chinese prompts cost about 24% more tokens than the same content in English. At scale, that's real money, both in API pricing and context window consumption. Other Western models probably look similar, though the exact number depends on the tokenizer.
+
+On Qwen or DeepSeek, the gap drops to 7-12%. Smaller, but still there.
+
+If you're picking a language to write prompts in: just write in whatever language you think in. The token difference is not big enough to justify switching, and the clarity you lose by translating your thoughts will hurt response quality more than the tokens you save.
+
+Character count is not token count. Your Chinese prompt looks shorter on screen, but the model sees it as longer. Anyone telling you to switch to Chinese to save tokens is confusing what they see with what the model processes.
+
+## Want to check my numbers?
+
+The test files are `CLAUDE.md` and `CLAUDE.zh.md` from [Golden CLAUDE.md](https://github.com/Z-M-Huang/golden-CLAUDE.md). Same behavioral rules, one in English, one in Chinese. If you find a tokenizer where Chinese wins on a full document, I'd genuinely like to know about it.

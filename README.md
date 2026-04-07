@@ -60,3 +60,82 @@ Markdown files in `knowledge/` are used by the AI chat widget. The backend fetch
 1. Add a new entry to `blog/manifest.json` with all required fields
 2. Create the MDX file at `blog/{category}/{slug}.mdx`
 3. Push to `main` — the webhook automatically invalidates the backend cache
+
+## MDX Features
+
+The following features are supported in `.mdx` article files.
+
+### Syntax-Highlighted Code Blocks
+
+Standard fenced code blocks with language identifiers are syntax-highlighted automatically. Supported languages include `go`, `typescript`, `javascript`, `python`, `bash`, `json`, `yaml`, and many others.
+
+````mdx
+```go
+func main() {
+    fmt.Println("Hello, world!")
+}
+```
+````
+
+### Playground Code Blocks
+
+Add `playground` after the language identifier to include a "Run this code" link to the Go Playground.
+
+````mdx
+```go playground
+package main
+
+import "fmt"
+
+func main() {
+    fmt.Println("Try it on the Go Playground")
+}
+```
+````
+
+### Mermaid Diagrams
+
+Use `mermaid` as the language identifier to render diagrams as inline SVG charts.
+
+````mdx
+```mermaid
+graph TD
+    A[Start] --> B{Decision}
+    B -->|Yes| C[Action]
+    B -->|No| D[Other action]
+```
+````
+
+### Callout Components
+
+Use the `<Callout>` component with a `type` prop to render styled callout boxes.
+
+```mdx
+<Callout type="info">Informational note for the reader.</Callout>
+
+<Callout type="warning">Warning about a potential issue.</Callout>
+
+<Callout type="tip">Helpful tip or best practice.</Callout>
+
+<Callout type="error">Error or critical notice.</Callout>
+```
+
+Supported types: `info`, `warning`, `tip`, `error`.
+
+### Images
+
+Standard markdown image syntax is rendered as a Next.js `<Image>` component wrapped in `<figure>` / `<figcaption>` for accessibility and layout.
+
+```mdx
+![Description of the image](https://example.com/image.png)
+```
+
+### Tables
+
+GFM (GitHub Flavored Markdown) tables are supported and rendered inside a responsive wrapper for horizontal scrolling on small screens.
+
+```mdx
+| Column A | Column B | Column C |
+|----------|----------|----------|
+| value 1  | value 2  | value 3  |
+```

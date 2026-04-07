@@ -209,6 +209,20 @@
       "readTime": "10 min read",
       "featured": true,
       "excludeFromFeatured": false
+    },
+    {
+      "slug": "chinese-token-myth",
+      "title": "No, Chinese Is Not More Token-Efficient Than English for LLMs",
+      "description": "A native Mandarin speaker tests the popular claim that Chinese characters save tokens when interacting with LLMs. Across six tokenizers — including Chinese-first models like Qwen, GLM, and DeepSeek — English uses fewer tokens every time. The data, the BPE mechanics, and why character count has nothing to do with token count.",
+      "date": "2026-04-07",
+      "category": "ai-llms",
+      "categoryLabel": "AI & LLMs",
+      "tags": ["tokenization", "bpe", "chinese", "llm-efficiency", "ai-models", "misconceptions"],
+      "published": true,
+      "image": "https://cdn.markhuang.ai/blog/chinese-token-myth/hero.webp",
+      "readTime": "8 min read",
+      "featured": true,
+      "excludeFromFeatured": false
     }
   ]
 }
