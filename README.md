@@ -71,9 +71,9 @@ Push to main → CI compiles → Upload to R2 → ISR revalidation → Cloudflar
 
 | Secret | Purpose |
 |--------|---------|
-| `R2_ACCOUNT_ID` | Cloudflare account ID |
-| `R2_ACCESS_KEY_ID` | R2 API token key ID |
-| `R2_SECRET_ACCESS_KEY` | R2 API token secret |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account ID |
+| `CLOUDFLARE_API_TOKEN` | API token (`Workers R2 Storage:Edit` + `Zone Cache Purge`) |
+| `CLOUDFLARE_ZONE_ID` | Zone ID for CDN cache purge |
 | `R2_BUCKET_NAME` | R2 bucket name |
 | `HOOK_BEARER_TOKEN` | Bearer token for backend hook endpoints |
 | `SITE_URL` | Production URL (e.g. `https://markhuang.ai`) |
