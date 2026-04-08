@@ -1,0 +1,131 @@
+![A massive complex geometric structure breaking apart into small, simple, glowing unit cubes](https://cdn.markhuang.ai/blog/the-1-plus-1-hypothesis/hero.webp)
+
+Every LLM can do 100 times 100. Every coding LLM can rename a variable. But ask Qwen 3.5 to implement a feature from an acceptance criterion, and you'll get confidently wrong code about half the time. The same task, given to Opus or GPT-5.4, works reliably.
+
+I've been running a [multi-AI pipeline](/blog/automation-without-intention-is-just-faster-chaos) for a while now. It works well with strong models. But when I swap in less capable models — Qwen 3.5, GLM-5, MiniMax M2.5 — the pipeline chokes. Not because these models can't code. They clearly can. The output just isn't reliable enough to trust in an automated pipeline.
+
+That got me thinking. If there's a spectrum from "always right" (simple arithmetic) to "usually wrong" (complex features), where exactly does reliability break down? And more importantly — can we push that boundary by engineering the harness instead of waiting for better models?
+
+I call this the 1+1 hypothesis. Not because software is additive like arithmetic (it obviously isn't). The hypothesis is narrower: for any coding-capable model, there exists a task granularity where the solution space is narrow enough that the model produces reliable output. The engineering challenge is finding and reaching that granularity.
+
+## The capability cliff
+
+![Strong models easily traversing a complex path while weaker models need a simpler well-lit route with guardrails](https://cdn.markhuang.ai/blog/the-1-plus-1-hypothesis/capability-cliff.webp)
+
+My pipeline breaks tasks into units of about 50 lines of code. Strong models handle these fine. But the failures with weaker models aren't where I expected. The implementation itself is often passable. What breaks is the semantic work upstream: can the model synthesize investigation findings? Can it tell whether a requirement is complete? Can it judge whether code actually matches the intent behind a review?
+
+These stages have wide solution spaces. There's no single "right answer" for "does this code match the acceptance criterion?" The judgment call is where weak models fail, not the typing.
+
+So the real question isn't "can weak models write code?" It's "can we make every stage of the pipeline narrow enough that model capability barely matters?"
+
+## Residual solution entropy, not lines of code
+
+![Two funnels side by side — one wide and chaotic, the other narrow and focused converging to a single point](https://cdn.markhuang.ai/blog/the-1-plus-1-hypothesis/solution-entropy.webp)
+
+The first thing I tried was making units smaller. If 50 lines is too much for Qwen, maybe 10 lines works. It didn't help much. A 10-line function with ambiguous requirements fails more often than a 50-line function with a crystal-clear contract.
+
+The governing variable isn't lines of code. It's what I'll call residual solution entropy: how many valid implementations exist after you've specified everything? If the answer is "basically one," even a weak model gets it right. If the answer is "dozens," even a strong model might pick the wrong one.
+
+Three techniques collapse that entropy.
+
+First, interface contracts. A function signature with types, pre/post conditions, and explicit edge cases leaves almost no room for interpretation. The model fills in the body, not the design.
+
+Second, test cases. Pre-written tests convert "implement this feature" into "make these assertions pass." That's a different kind of task entirely, closer to constraint satisfaction than open-ended generation.
+
+Third, and this one surprised me, algorithm hints. A single sentence like "use bcrypt.compare for password verification" or "iterate with a sliding window" narrows infinite possible implementations down to one or two. Smallest intervention, largest reliability gain.
+
+Here's a practical convergence test: run the same task through a weak model five times. If four of those runs produce semantically equivalent code, the task is narrow enough. If you get five different approaches, the solution entropy is too high.
+
+<Callout variant="tip">
+The decomposition stopping rule isn't about line count. It's about whether the specification constrains the output enough that the model's job is closer to transcription than invention. When your spec is longer than your code, you're probably there.
+</Callout>
+
+## Division of labor
+
+![A large bright processor at the top emitting blueprints to many smaller processors below that assemble components](https://cdn.markhuang.ai/blog/the-1-plus-1-hypothesis/division-of-labor.webp)
+
+This leads to an uncomfortable truth. You still need a strong model somewhere. The decomposition itself — deciding how to split the problem, writing the contracts, designing the test cases — requires exactly the kind of reasoning that weak models are bad at.
+
+But that's not a failure of the hypothesis. It's leverage.
+
+One Opus call generates 50 contracts. 50 Qwen calls fill them in. The strong model reasons once; the weak models transcribe many times. Way cheaper than running the strong model for everything, and the contracts are reusable across retries.
+
+This pattern has a name in the research literature. [Burns et al. (2023)](https://arxiv.org/abs/2312.09390) call it "weak-to-strong generalization" — the idea that a strong supervisor can elicit reliable performance from weaker models through careful specification. The mechanism here is exactly that: strong model as architect, weak models as builders.
+
+The economics work out. Strong-model tokens for specifications, weak-model tokens for code. The specification cost is fixed per unit type; the implementation cost scales with attempts. As long as weak models succeed within a few tries, the total cost is lower.
+
+## Beyond implementation — semantic stages too
+
+But what about the upstream stages that I said were the real failure point? Investigation, requirements, code review, decomposition — can weak models handle those too?
+
+I ran a second round of research on this, and the answer is: **yes, partially, if you restructure the stages.**
+
+Two techniques work for different reasons:
+
+Multi-perspective dispatch narrows the judgment space. Instead of asking one model "review this code," you give ten models each a focused lens: "check for SQL injection," "evaluate error handling," "verify the API contract." Each focused query is narrow enough for a weak model. You combine findings mechanically: union, dedup, rank by severity. This is what the multi-AI pipeline already does, but the insight is that it works because of scope narrowing, not model diversity.
+
+Recursive decomposition narrows the reasoning scope at each level. Instead of "break this 500-line feature into atomic units" (hard), you do "break this feature into 3-5 major parts" (easy), then "break each part into 3-5 sub-parts" (easier), repeating until you reach atomic units. Each step is simpler than decomposing everything at once. Research on [Least-to-Most Prompting](https://openreview.net/forum?id=WZH7099tgfM) and [Decomposed Prompting](https://openreview.net/forum?id=_nGgzQjzaRy) backs this up. Smaller subproblems really are easier.
+
+The catch: naive recursive decomposition compounds errors. A bad top-level split poisons everything below it. It only works when each level has a typed output schema that can be verified locally, and when the system can backtrack or try alternate decompositions. This is essentially a [Tree of Thoughts](https://openreview.net/forum?id=5Xc1ecxO1h) approach.
+
+The hybrid that works: recursive decomposition for structure, multi-perspective dispatch for coverage at each level, mechanical merge of results, escalate only the conflicts. The synthesis step doesn't need to be intelligent. It needs to be structured.
+
+## The layered defense
+
+![Five concentric defense layers shown in cross-section, each a different color with light passing through to emerge as a verified output](https://cdn.markhuang.ai/blog/the-1-plus-1-hypothesis/layered-defense.webp)
+
+To test these ideas, I ran a multi-AI debate: 11 models across 4 families (Claude Opus, Qwen 3.5, Kimi K2.5, GLM-5, Qwen 3 Max), two rounds of adversarial discussion. They independently converged on the same 5-layer architecture:
+
+| Layer | Purpose | Example |
+|-------|---------|---------|
+| Capability classifier | Route tasks to matching model tier | Novel algorithm → strong model; CRUD → weak model |
+| Structured constraints | Narrow solution space before generation | Contracts, schemas, algorithm hints, checklists |
+| Static validation | Cheapest gate — catch surface errors | Type checking, linting, schema validation |
+| Test execution | Functional verification | Pre-written tests as oracle |
+| Iterative refinement | Error feedback loop | Generate → test → feed errors → retry (max 3) |
+
+The minimum viable stack depends on your reliability target:
+
+| Target | Minimum stack |
+|--------|--------------|
+| ~80% (internal tools) | Contracts + static gates |
+| ~90% (customer-facing) | + iterative refinement |
+| ~95%+ (critical systems) | + capability classifier + strong-model review |
+
+The iterative refinement layer deserves emphasis. A weak model's first attempt might be 60% correct, but when you show it the specific test failure and error message, the second attempt jumps to 85%. This isn't new — it's essentially a modern version of [counterexample-guided inductive synthesis (CEGIS)](https://www.cis.upenn.edu/~alur/SyGuS13.pdf), a technique from program synthesis that's been effective for decades. The LLM version is just cheaper and more flexible.
+
+## What blind consensus gets wrong
+
+One of my original hypotheses was consensus through volume: run five weak models on the same task, majority-vote on the output. Cheap tokens make this viable at scale.
+
+Every model in the debate rejected this. Unanimously. The irony isn't lost on me — the very models this approach would apply to argued against it.
+
+The reason is [Condorcet's jury theorem](https://en.wikipedia.org/wiki/Condorcet%27s_jury_theorem). Majority voting improves reliability only when errors are independent. But models trained on the same GitHub and Stack Overflow corpora share systematic blind spots. Five Qwen instances don't give you five independent opinions. They give you one opinion sampled five times with minor variance.
+
+But here's the nuance I almost missed. Blind consensus (majority vote, no oracle) fails. Verified search (many samples, strong selector) works. [AlphaCode](https://arxiv.org/abs/2203.07814) generates thousands of candidates and filters with test execution. [Codex](https://arxiv.org/abs/2107.03374) showed that pass@100 dramatically outperforms pass@1. [Brown et al. (2024)](https://arxiv.org/abs/2407.21787) found that inference-time scaling works when you have verifiers.
+
+The distinction matters. Consensus measures agreement, not correctness. An oracle measures correctness directly. With a strong enough oracle (tests, static analysis, execution), volume becomes a search strategy, not a voting strategy.
+
+## The honest limits
+
+I should flag my own blind spot. The multi-AI debate that generated these findings may itself suffer from epistemic monoculture. These models share training data, benchmark lore, and common papers. Their "universal convergence" might just be correlated agreement from overlapping knowledge bases — the same failure mode we identified for consensus-through-volume.
+
+So treat these findings as hypotheses, not conclusions.
+
+That said, the failure modes are real and worth cataloging: oracle failure (weak tests create false confidence), interface leakage (hidden coupling between decomposed units), distribution mismatch (model handles common Python but fails on niche APIs), decomposition error (wrong abstraction boundary makes every downstream piece locally correct but globally wrong), and the economics problem (at some point, decomposition overhead exceeds the cost of just using a strong model).
+
+The addressable percentage depends heavily on the domain. For CRUD and data transformations, 80% of tasks are probably narrow enough. For security-critical code or novel algorithms, maybe 60%. For greenfield architecture, the answer might be "use a strong model."
+
+There's also the bootstrapping question. Someone — a human or a strong model — still needs to write good contracts. The hypothesis reduces strong-model usage, it doesn't eliminate it.
+
+## What this means
+
+The defensible version of the 1+1 hypothesis is this: for models with non-zero coverage over the target idiom, reliability becomes a search-space engineering problem once you add a strong enough oracle.
+
+Don't try to make weak models smarter. Make the solution spaces narrower and the oracles stronger.
+
+The harness matters as much as the model. Maybe more.
+
+<Callout variant="info">
+Research referenced in this post: [Weak-to-Strong Generalization](https://arxiv.org/abs/2312.09390), [Codex/pass@k](https://arxiv.org/abs/2107.03374), [AlphaCode](https://arxiv.org/abs/2203.07814), [Large Language Monkeys](https://arxiv.org/abs/2407.21787), [Decomposed Prompting](https://openreview.net/forum?id=_nGgzQjzaRy), [Least-to-Most Prompting](https://openreview.net/forum?id=WZH7099tgfM), [Tree of Thoughts](https://openreview.net/forum?id=5Xc1ecxO1h), [ReConcile](https://aclanthology.org/2024.acl-long.381/), [SyGuS/CEGIS](https://www.cis.upenn.edu/~alur/SyGuS13.pdf), [MBR-EXEC](https://arxiv.org/abs/2204.11454). The multi-AI debate was conducted with Qwen 3.5 Plus, Kimi K2.5, GLM-5, and Qwen 3 Max; the critical review used GPT-5.4 via Codex CLI.
+</Callout>

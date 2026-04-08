@@ -223,6 +223,20 @@
       "readTime": "8 min read",
       "featured": false,
       "excludeFromFeatured": false
+    },
+    {
+      "slug": "the-1-plus-1-hypothesis",
+      "title": "The 1+1 Hypothesis: Can You Break Coding Problems Small Enough for Any LLM?",
+      "description": "Every LLM can do 100×100. Every coding LLM can rename a variable. But where does reliability break — and can harness engineering push that boundary? Exploring residual solution entropy, test-first contracts, layered defense architectures, and why blind consensus fails while verified search works.",
+      "date": "2026-04-08",
+      "category": "ai-llms",
+      "categoryLabel": "AI & LLMs",
+      "tags": ["harness-engineering", "weak-models", "decomposition", "test-first", "multi-ai", "reliability"],
+      "published": true,
+      "image": "https://cdn.markhuang.ai/blog/the-1-plus-1-hypothesis/hero.webp",
+      "readTime": "10 min read",
+      "featured": false,
+      "excludeFromFeatured": false
     }
   ]
 }
