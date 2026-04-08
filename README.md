@@ -1,6 +1,6 @@
 # content.markhuang.ai
 
-Content repository for [markhuang.ai](https://markhuang.ai). The Go backend fetches content from this repo via the GitHub raw API with in-memory caching and webhook-driven invalidation.
+Content repository for [markhuang.ai](https://markhuang.ai). On push to `main`, GitHub Actions compiles MDX articles with shiki syntax highlighting and uploads them to Cloudflare R2. The frontend fetches pre-highlighted content from R2 at ISR time — no backend content proxy, no runtime shiki.
 
 ## Structure
 
@@ -13,7 +13,15 @@ content.markhuang.ai/
 │   ├── software-engineering/   # Software Engineering category
 │   └── tutorials/              # Tutorials category
 │       └── *.mdx               # Article content files
-└── knowledge/                  # AI chat widget knowledge base (*.md)
+├── knowledge/                  # AI chat widget knowledge base (*.md)
+├── scripts/
+│   ├── compile.ts             # Shiki pre-highlighting + dist/ output
+│   └── convert-images.sh      # WebP image conversion
+├── .github/workflows/
+│   └── publish.yml            # CI: compile → R2 upload → ISR revalidate
+└── dist/                      # Build output (gitignored)
+    ├── manifest.json          # Flat array of published entries
+    └── articles/{slug}.mdx    # Pre-highlighted MDX
 ```
 
 ## Blog Articles
@@ -37,29 +45,52 @@ All article metadata lives in `blog/manifest.json`. Each entry contains:
 
 ### MDX Files
 
-Article content is stored as MDX at `blog/{category}/{slug}.mdx`. The backend resolves articles by category + slug from the manifest.
+Article content is stored as MDX at `blog/{category}/{slug}.mdx`.
 
 ## Knowledge Base
 
-Markdown files in `knowledge/` are used by the AI chat widget. The backend fetches `knowledge/manifest.json` (when present) and individual `*.md` files to provide context for chat responses.
+Markdown files in `knowledge/` are used by the AI chat widget. The backend fetches these via the GitHub raw API (unchanged by the R2 content pipeline).
 
-## How the Backend Consumes This Repo
+## Content Pipeline
 
-| Setting                | Env Var              | Default                              |
-|------------------------|----------------------|--------------------------------------|
-| Repository             | `CONTENT_REPO`       | `Z-M-Huang/content.markhuang.ai`    |
-| Branch                 | `CONTENT_BRANCH`     | `main`                               |
-| Path prefix            | `CONTENT_PATH_PREFIX`| _(empty — reads from root)_          |
+```
+Push to main → CI compiles → Upload to R2 → ISR revalidation → Cloudflare cache purge
+                  ↓                                ↓
+           shiki highlighting              Backend notified of
+           (dual themes)                   new articles for newsletter
+```
 
-- **Production**: Backend fetches from GitHub raw API (`raw.githubusercontent.com`)
-- **Cache invalidation**: A GitHub webhook (`POST /api/v1/webhook/github`) triggers cache refresh when content is pushed
-- **Local dev**: Backend can also read from a local directory via `FileContentReader`
+| Step | What happens |
+|------|-------------|
+| **Compile** | `scripts/compile.ts` runs shiki on fenced code blocks (18 languages, dual themes: `github-light`/`github-dark`) |
+| **Upload** | Compiled MDX + manifest uploaded to R2 via S3-compatible API |
+| **Revalidate** | `POST /api/v1/hooks/revalidate` triggers Next.js ISR cache refresh |
+| **Newsletter** | `POST /api/v1/hooks/content-published` creates newsletter drafts for new articles |
+
+### Required GitHub Secrets
+
+| Secret | Purpose |
+|--------|---------|
+| `R2_ACCOUNT_ID` | Cloudflare account ID |
+| `R2_ACCESS_KEY_ID` | R2 API token key ID |
+| `R2_SECRET_ACCESS_KEY` | R2 API token secret |
+| `R2_BUCKET_NAME` | R2 bucket name |
+| `HOOK_BEARER_TOKEN` | Bearer token for backend hook endpoints |
+| `SITE_URL` | Production URL (e.g. `https://markhuang.ai`) |
+
+## Local Development
+
+```bash
+bun install               # install dependencies
+bun run compile           # compile all published articles to dist/
+bun run compile:changed slug1 slug2  # compile specific articles only
+```
 
 ## Adding a New Article
 
 1. Add a new entry to `blog/manifest.json` with all required fields
 2. Create the MDX file at `blog/{category}/{slug}.mdx`
-3. Push to `main` — the webhook automatically invalidates the backend cache
+3. Push to `main` — CI compiles, uploads to R2, and triggers ISR revalidation
 
 ## MDX Features
 

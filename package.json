@@ -1,0 +1,13 @@
+{
+  "name": "content.markhuang.ai",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "compile": "bun run scripts/compile.ts",
+    "compile:changed": "bun run scripts/compile.ts --changed"
+  },
+  "devDependencies": {
+    "shiki": "^3.4.2",
+    "typescript": "^5.8.3"
+  }
+}
