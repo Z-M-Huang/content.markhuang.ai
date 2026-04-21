@@ -237,6 +237,20 @@
       "readTime": "10 min read",
       "featured": false,
       "excludeFromFeatured": false
+    },
+    {
+      "slug": "the-determinism-trade",
+      "title": "The Determinism Trade: Why I Archived My Agent Framework for 15 Minutes of N8N",
+      "description": "I spent two months building OpenHive — my own OpenClaw — to explore 'agent as feature' for a 1-man company. It reached v4, 90% functional, and still shouted log lines I never asked for. I rebuilt the same monitor in N8N in 15 minutes. Here's what I learned about where LLMs actually belong.",
+      "date": "2026-04-21",
+      "category": "ai-llms",
+      "categoryLabel": "AI & LLMs",
+      "tags": ["ai-agents", "agentic-ai", "n8n", "agent-orchestration", "vibe-coding", "experience"],
+      "published": true,
+      "image": "https://cdn.markhuang.ai/blog/the-determinism-trade/hero.webp",
+      "readTime": "8 min read",
+      "featured": false,
+      "excludeFromFeatured": false
     }
   ]
 }

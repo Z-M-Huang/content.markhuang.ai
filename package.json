@@ -3,11 +3,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "compile": "bun run scripts/compile.ts",
-    "compile:changed": "bun run scripts/compile.ts --changed"
+    "compile": "tsx scripts/compile.ts",
+    "compile:changed": "tsx scripts/compile.ts --changed"
   },
   "devDependencies": {
     "shiki": "^3.4.2",
+    "tsx": "^4.19.2",
     "typescript": "^5.8.3",
     "wrangler": "^4.14.4"
   }

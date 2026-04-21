@@ -1,0 +1,95 @@
+![A lone architect facing a holographic network transitioning from chaotic probabilistic shimmer to a crystalline deterministic lattice](https://cdn.markhuang.ai/blog/the-determinism-trade/hero.webp)
+
+I spent two months vibe coding [OpenHive](https://github.com/Z-M-Huang/openhive) — my own version of [OpenClaw](https://github.com/openclaw/openclaw) — to see what "agent as feature" could actually do for a one-person workflow.
+
+It reached v4. It was about 90% functional. And one afternoon, my Loggly-monitor team printed a log line that said "I am now going to query loggly API to check errors." I never asked for that line. No prompt patch made it stop.
+
+That's the moment I archived the repo.
+
+## Why this was supposed to work
+
+I wrote [Agent as Feature](/blog/agent-as-feature-what-happens-when-ai-replaces-your-backend-logic) in March as a thinking-out-loud piece about replacing deterministic controllers with reasoning agents. I believed the pattern was real. I still do. But believing something is real and betting two months of your only-engineer life on it are different things, and I wanted to find out the hard way.
+
+The pitch I sold myself: as a one-person company, I don't have the bandwidth to write and maintain conventional automation. What I need is a team of colleagues who can take a goal, figure out what to do, and do it — including the parts I didn't think to specify. Agents, not scripts. Reasoning, not branching.
+
+So I built it. Two months. Four versions. The repo is [public and archived](https://github.com/Z-M-Huang/openhive). Not a weekend experiment — a sincere attempt.
+
+## Where it actually broke
+
+It didn't fail the way I thought it would.
+
+The code was right most of the time. The Loggly monitor queried the API, detected errors, sent alerts. It did its job. What it *also* did, on and off, no matter how I phrased the instructions, was narrate itself. It would announce its intentions out loud, in structured output, as if the poll itself needed a press release.
+
+![A row of robots quietly working while one emits a stray amber ribbon of text into the air](https://cdn.markhuang.ai/blog/the-determinism-trade/stray-log-line.webp)
+
+This isn't a bug. A bug is something you patch. What I had was a model doing something reasonable in a corner I hadn't thought to nail down. I tried the usual moves: stricter system prompts, explicit negative rules, few-shot examples of the silent behavior I wanted. Every fix shaved off a little of the symptom and slowed everything else down. I was writing rules about rules.
+
+The phrase I kept coming back to was: *this isn't engineering. This is crossing fingers.*
+
+And that's the tell. If vibes are the only thing between your system and a 2am page, you don't have a system.
+
+## The determinism trade
+
+Here's what I didn't understand going in.
+
+Every system has non-determinism somewhere. User input. Network conditions. The world itself. The engineering question is never "how do I eliminate non-determinism." It's *where do I put it, and how much of my control flow runs through it?*
+
+![A split-panel illustration contrasting a probabilistic cloud holding deterministic cubes versus a crystalline lattice holding bounded probabilistic bubbles](https://cdn.markhuang.ai/blog/the-determinism-trade/orchestration-inversion.webp)
+
+OpenHive put an LLM at the orchestration layer. Every routing decision, every "should I alert now," every state check, every hand-off between agents went through the model. The non-determinism wasn't contained. It *was* the control plane.
+
+N8N inverts that. The control plane is deterministic: nodes, edges, retries, timers, branching logic. LLMs are optional cells inside that plane, each one scoped to a bounded job — classify this message, extract these fields, summarize this thread, decide this one thing. LLM outputs can be validated before they feed the next deterministic step.
+
+Same ingredients. Inverted arrangement. Completely different failure surface.
+
+The trade: you give up some of the LLM's flexibility at the spine. In exchange, you get debuggability, retries, explicit error paths, and auditable state for free. For a one-person company, that exchange is not close.
+
+Prompts don't compose deterministically, and that's not something better prompts fix. It's where you put the LLM.
+
+## The 15-minute rebuild
+
+The same Loggly monitor, in N8N: cron trigger, HTTP request node pointed at the Loggly API, filter node, notification node. Done.
+
+![Four small glass-and-brass machines on a workbench connected by a single clean amber thread of light, with a switched-off overcomplicated machine pushed aside in the background](https://cdn.markhuang.ai/blog/the-determinism-trade/n8n-rebuild.webp)
+
+What I didn't have to write: the retry logic. The error handler. The state machine tracking whether an alert already fired. The dashboard I actually want to look at when something breaks at midnight. All of that came in the box.
+
+<Callout variant="info">
+Honestly, Loggly's paid plans already include alerting out of the box, so for this specific case I could have just upgraded. I did the rebuild anyway, because what I wanted wasn't a Loggly monitor. I wanted a template for the next thing, and the one after that.
+</Callout>
+
+The honest comparison isn't "N8N beats OpenClaw." It's that fifteen minutes of plain deterministic nodes beat two months of coaxing an LLM to act like one, for this class of problem. And "this class of problem" turns out to cover almost everything a one-person company actually wants automated.
+
+## "Just wait for better models"
+
+The obvious pushback: models will get better at instruction-following, and when they do, the stray-log-line problem goes away.
+
+It won't.
+
+The stray log line wasn't disobedience. The model didn't refuse an instruction. It filled in a gap I hadn't thought to close, in a way that seemed reasonable to it. Better instruction-following means the model sticks to the specs I *do* write. It doesn't mean the model stops generating content in the parts I forgot to lock down. The problem isn't capability. It's that specs are always incomplete, and a model running the control flow will still fill those gaps however it feels like.
+
+There's a second, more practical reason. Betting two months on "the model will improve" is, itself, the failure mode I'm trying to avoid. Opportunity cost is the argument here, not technical pessimism. If you have a team with ML-engineering bandwidth and the appetite to invest in guardrails, structured outputs, and evals, go. Agent orchestration at scale is real, and I'm rooting for it. That isn't my situation. It probably isn't yours either, if you're reading a one-person blog.
+
+## Where I still want agents
+
+This isn't a turn against AI. I kept the AI. I just moved it inside the deterministic graph.
+
+The pattern I'm still chasing: a Discord chat trigger that hands a natural-language message to an LLM, which classifies intent, extracts arguments, and routes to the right N8N workflow with structured parameters. LLM as parser, classifier, and fuzzy-matcher between what a human typed and what the workflow actually needs. N8N as executor. Never LLM as controller.
+
+I haven't fully nailed that pattern yet. If you have a clean recipe for natural-language triggers on top of deterministic workflow engines, I'd genuinely like to hear from you.
+
+## The heuristic I use now
+
+![A tall amber scaffolding rising against an indigo sky, with small self-luminous teal orbs of probabilistic mist held in specific niches within the scaffolding](https://cdn.markhuang.ai/blog/the-determinism-trade/heuristic-gate.webp)
+
+If there's one thing to take from this:
+
+> **Deterministic scaffolding first. LLMs for the fuzzy parts. Never the other way around.**
+
+Routing, state, scheduling, retries, error paths: these are deterministic by nature. Push an LLM into them and you'll spend months trying to make something probabilistic behave deterministically. Classification, generation, semantic matching, natural-language parsing: these are genuinely fuzzy. LLMs are the right tool there, inside cells with typed inputs and validated outputs.
+
+The test I run on myself now: if I find myself adding validation logic around every LLM step, I'm building a workflow engine with extra steps. Just use a workflow engine.
+
+The two months weren't waste. They were tuition. I know now where the agent-as-orchestrator pattern breaks for a one-person operation, and I know what I'd need before trying again: an ML-engineering team, a guardrails budget, and an evals harness at least as deliberate as the agents themselves.
+
+I archived the thing. I rebuilt the thing. Cheaper than spending another two months finding out.

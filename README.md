@@ -81,9 +81,9 @@ Push to main → CI compiles → Upload to R2 → ISR revalidation → Cloudflar
 ## Local Development
 
 ```bash
-bun install               # install dependencies
-bun run compile           # compile all published articles to dist/
-bun run compile:changed slug1 slug2  # compile specific articles only
+npm install                              # install dependencies
+npm run compile                          # compile all published articles to dist/
+npm run compile:changed -- slug1 slug2   # compile specific articles only
 ```
 
 ## Adding a New Article

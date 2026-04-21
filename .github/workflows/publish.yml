@@ -39,13 +39,14 @@ jobs:
         with:
           fetch-depth: 2 # Need parent commit to detect changed files
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          bun-version: latest
+          node-version: "22"
+          cache: "npm"
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: npm ci
 
       - name: Detect changed articles
         id: changes
@@ -114,9 +115,9 @@ jobs:
           SLUGS: ${{ steps.changes.outputs.slugs }}
         run: |
           if [ "$COMPILE_MODE" = "changed" ]; then
-            bun run compile:changed $SLUGS
+            npm run compile:changed -- $SLUGS
           else
-            bun run compile
+            npm run compile
           fi
 
       - name: Upload to R2
@@ -132,13 +133,13 @@ jobs:
             for file in dist/articles/*.mdx; do
               [ -f "$file" ] || continue
               npx wrangler r2 object put "${R2_BUCKET_NAME}/articles/$(basename "$file")" \
-                --file "$file" --content-type "text/mdx"
+                --file "$file" --content-type "text/mdx" --remote
             done
           fi
 
           if [ -f "dist/manifest.json" ]; then
             npx wrangler r2 object put "${R2_BUCKET_NAME}/manifest.json" \
-              --file "dist/manifest.json" --content-type "application/json"
+              --file "dist/manifest.json" --content-type "application/json" --remote
           fi
 
       - name: Trigger ISR revalidation

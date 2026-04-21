@@ -2,8 +2,8 @@
  * Compile MDX articles by pre-highlighting fenced code blocks with shiki.
  *
  * Usage:
- *   bun run scripts/compile.ts                         # compile all published articles
- *   bun run scripts/compile.ts --changed slug1 slug2   # compile only specified slugs
+ *   npm run compile                              # compile all published articles
+ *   npm run compile:changed -- slug1 slug2       # compile only specified slugs
  *
  * Output:
  *   dist/manifest.json        — flat array of published article metadata

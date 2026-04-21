@@ -14,7 +14,7 @@ Browser
                                    └─ GitHub raw API → content.markhuang.ai repo
 ```
 
-**Frontend** — Next.js 16 (App Router) with TypeScript strict mode and Tailwind CSS v4. Server components by default. Blog listing revalidates every 60s, articles every 300s. bun is the package manager.
+**Frontend** — Next.js 16 (App Router) with TypeScript strict mode and Tailwind CSS v4. Server components by default. Blog listing revalidates every 60s, articles every 300s. npm is the package manager.
 
 **Backend** — Go 1.26 with Chi v5 router and GORM for PostgreSQL. Interface-driven architecture with structured JSON logging via slog. Handles content delivery, AI chat, newsletter, view counts, and the admin portal. Config is environment-variable only with fail-closed defaults.
 
