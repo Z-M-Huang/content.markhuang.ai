@@ -1,0 +1,67 @@
+{
+  "projects": [
+    {
+      "id": "1",
+      "name": "VCP",
+      "description": "Vibe Coding Protocol — security-first protocol for AI-generated code with multiple standards, real-time enforcement, and multi-AI pipeline orchestration.",
+      "techStack": ["TypeScript", "JavaScript", "Claude Code", "Security"],
+      "githubUrl": "https://github.com/Z-M-Huang/vcp",
+      "featured": true
+    },
+    {
+      "id": "2",
+      "name": "cc-proficiency",
+      "description": "Claude Code proficiency badge system — earn and display proficiency badges based on your Claude Code usage and mastery.",
+      "techStack": ["TypeScript", "Claude Code", "SVG"],
+      "githubUrl": "https://github.com/Z-M-Huang/cc-proficiency",
+      "featured": false
+    },
+    {
+      "id": "3",
+      "name": "git-doc-mcp",
+      "description": "Define your MCP server in YAML, write actions in JavaScript, host the files anywhere. No backend needed.",
+      "techStack": ["TypeScript", "Node.js", "MCP", "Security"],
+      "githubUrl": "https://github.com/Z-M-Huang/git-doc-mcp",
+      "featured": true
+    },
+    {
+      "id": "4",
+      "name": "golden-CLAUDE.md",
+      "description": "A masterpiece CLAUDE.md configuration to maximize Claude Code proficiency — curated rules, patterns, and guardrails for AI-assisted development.",
+      "techStack": ["Claude Code", "AI Coding"],
+      "githubUrl": "https://github.com/Z-M-Huang/golden-CLAUDE.md",
+      "featured": false
+    },
+    {
+      "id": "5",
+      "name": "markhuang.ai",
+      "description": "This personal website — built with Next.js 16, Go 1.26, and Tailwind CSS v4. Server Components-first architecture with a dark-mode-primary design system.",
+      "techStack": [
+        "Next.js",
+        "Go",
+        "TypeScript",
+        "Tailwind CSS",
+        "Docker",
+        "PostgreSQL"
+      ],
+      "liveUrl": "https://markhuang.ai",
+      "featured": false
+    },
+    {
+      "id": "6",
+      "name": "claude-codex",
+      "description": "Multi-AI orchestration plugin for Claude Code with sequential reviews, Codex final gate, and hook-based enforcement. Archived — succeeded by VCP.",
+      "techStack": ["TypeScript", "Claude Code", "Multi-AI"],
+      "githubUrl": "https://github.com/Z-M-Huang/claude-codex",
+      "featured": false
+    },
+    {
+      "id": "7",
+      "name": "claude-codex-gemini",
+      "description": "Gemini as orchestrator, Claude to code, Codex as reviewer — an experiment in multi-AI collaboration workflows.",
+      "techStack": ["TypeScript", "JavaScript", "Gemini", "Claude Code"],
+      "githubUrl": "https://github.com/Z-M-Huang/claude-codex-gemini",
+      "featured": false
+    }
+  ]
+}

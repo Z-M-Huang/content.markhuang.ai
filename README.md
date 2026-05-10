@@ -1,6 +1,6 @@
 # content.markhuang.ai
 
-Content repository for [markhuang.ai](https://markhuang.ai). On push to `main`, GitHub Actions compiles MDX articles with shiki syntax highlighting and uploads them to Cloudflare R2. The frontend fetches pre-highlighted content from R2 at ISR time — no backend content proxy, no runtime shiki.
+Content repository for [markhuang.ai](https://markhuang.ai). On push to `main`, GitHub Actions compiles MDX articles with shiki syntax highlighting and uploads them to Cloudflare R2. The frontend fetches pre-highlighted content from R2 at ISR time — no backend content proxy, no runtime shiki. The backend Article AI feature reads raw source MDX from the public repo configured by `ARTICLE_AI_SOURCE_REPO` after validating the article against the published R2 manifest.
 
 ## Structure
 
@@ -14,6 +14,8 @@ content.markhuang.ai/
 │   └── tutorials/              # Tutorials category
 │       └── *.mdx               # Article content files
 ├── knowledge/                  # AI chat widget knowledge base (*.md)
+├── projects/
+│   └── manifest.json          # Source of truth for project metadata
 ├── scripts/
 │   ├── compile.ts             # Shiki pre-highlighting + dist/ output
 │   └── convert-images.sh      # WebP image conversion
@@ -30,26 +32,36 @@ content.markhuang.ai/
 
 All article metadata lives in `blog/manifest.json`. Each entry contains:
 
-| Field           | Type       | Description                              |
-|-----------------|------------|------------------------------------------|
-| `slug`          | string     | URL-safe identifier (matches MDX filename) |
-| `title`         | string     | Article title                            |
-| `description`   | string     | Short description for SEO/previews       |
-| `date`          | string     | Publication date (`YYYY-MM-DD`)          |
-| `category`      | string     | Directory name (e.g. `tutorials`)        |
-| `categoryLabel` | string     | Display name (e.g. `Tutorials`)          |
-| `tags`          | string[]   | Topic tags                               |
-| `published`     | boolean    | Set `false` to hide from listings        |
-| `image`         | string\|null | Optional hero image URL                |
-| `readTime`      | string     | Estimated read time (e.g. `11 min read`) |
+| Field           | Type         | Description                                |
+| --------------- | ------------ | ------------------------------------------ |
+| `slug`          | string       | URL-safe identifier (matches MDX filename) |
+| `title`         | string       | Article title                              |
+| `description`   | string       | Short description for SEO/previews         |
+| `date`          | string       | Publication date (`YYYY-MM-DD`)            |
+| `category`      | string       | Directory name (e.g. `tutorials`)          |
+| `categoryLabel` | string       | Display name (e.g. `Tutorials`)            |
+| `tags`          | string[]     | Topic tags                                 |
+| `published`     | boolean      | Set `false` to hide from listings          |
+| `image`         | string\|null | Optional hero image URL                    |
+| `readTime`      | string       | Estimated read time (e.g. `11 min read`)   |
 
 ### MDX Files
 
 Article content is stored as MDX at `blog/{category}/{slug}.mdx`.
+Article AI translate/summarize uses these raw MDX files directly from the public
+GitHub repo configured by `ARTICLE_AI_SOURCE_REPO` so LLM input does not include
+shiki pre-highlight markup.
+
+## Projects
+
+Project metadata lives in `projects/manifest.json` and is uploaded to R2 as
+`projects/manifest.json`. The frontend fetches it at render time for the home
+page and `/projects`.
 
 ## Knowledge Base
 
-Markdown files in `knowledge/` are used by the AI chat widget. The backend fetches these via the GitHub raw API (unchanged by the R2 content pipeline).
+Markdown files in `knowledge/` are used by the AI chat widget. The backend
+fetches `knowledge/manifest.json` and `knowledge/*.md` from R2.
 
 ## Content Pipeline
 
@@ -60,23 +72,23 @@ Push to main → CI compiles → Upload to R2 → ISR revalidation → Cloudflar
            (dual themes)                   new articles for newsletter
 ```
 
-| Step | What happens |
-|------|-------------|
-| **Compile** | `scripts/compile.ts` runs shiki on fenced code blocks (18 languages, dual themes: `github-light`/`github-dark`) |
-| **Upload** | Compiled MDX + manifest uploaded to R2 via S3-compatible API |
-| **Revalidate** | `POST /api/v1/hooks/revalidate` triggers Next.js ISR cache refresh |
-| **Newsletter** | `POST /api/v1/hooks/content-published` creates newsletter drafts for new articles |
+| Step           | What happens                                                                                                    |
+| -------------- | --------------------------------------------------------------------------------------------------------------- |
+| **Compile**    | `scripts/compile.ts` runs shiki on fenced code blocks (18 languages, dual themes: `github-light`/`github-dark`) |
+| **Upload**     | Compiled MDX, article manifest, project manifest, and knowledge files uploaded to R2 via S3-compatible API      |
+| **Revalidate** | `POST /api/v1/hooks/revalidate` triggers Next.js ISR cache refresh                                              |
+| **Newsletter** | `POST /api/v1/hooks/content-published` creates newsletter drafts for new articles                               |
 
 ### Required GitHub Secrets
 
-| Secret | Purpose |
-|--------|---------|
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account ID |
-| `CLOUDFLARE_API_TOKEN` | API token (`Workers R2 Storage:Edit` + `Zone Cache Purge`) |
-| `CLOUDFLARE_ZONE_ID` | Zone ID for CDN cache purge |
-| `R2_BUCKET_NAME` | R2 bucket name |
-| `HOOK_BEARER_TOKEN` | Bearer token for backend hook endpoints |
-| `SITE_URL` | Production URL (e.g. `https://markhuang.ai`) |
+| Secret                  | Purpose                                                    |
+| ----------------------- | ---------------------------------------------------------- |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account ID                                      |
+| `CLOUDFLARE_API_TOKEN`  | API token (`Workers R2 Storage:Edit` + `Zone Cache Purge`) |
+| `CLOUDFLARE_ZONE_ID`    | Zone ID for CDN cache purge                                |
+| `R2_BUCKET_NAME`        | R2 bucket name                                             |
+| `HOOK_BEARER_TOKEN`     | Bearer token for backend hook endpoints                    |
+| `SITE_URL`              | Production URL (e.g. `https://markhuang.ai`)               |
 
 ## Local Development
 
@@ -167,6 +179,6 @@ GFM (GitHub Flavored Markdown) tables are supported and rendered inside a respon
 
 ```mdx
 | Column A | Column B | Column C |
-|----------|----------|----------|
+| -------- | -------- | -------- |
 | value 1  | value 2  | value 3  |
 ```

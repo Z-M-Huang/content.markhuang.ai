@@ -11,7 +11,8 @@ Browser
   └─ markhuang.ai/api/*      → Go backend API
                                    │
                                    ├─ PostgreSQL (external database)
-                                   └─ GitHub raw API → content.markhuang.ai repo
+                                   ├─ Cloudflare R2 → articles + knowledge
+                                   └─ GitHub raw content → Article AI source MDX
 ```
 
 **Frontend** — Next.js 16 (App Router) with TypeScript strict mode and Tailwind CSS v4. Server components by default. Blog listing revalidates every 60s, articles every 300s. npm is the package manager.
@@ -20,7 +21,7 @@ Browser
 
 **Database** — PostgreSQL, external in all environments (no database container). Stores subscribers, newsletter records, view counts, IP bans, and admin sessions.
 
-**Content** — Blog articles (MDX) and knowledge files (Markdown) live in a separate GitHub repo. The backend fetches via GitHub raw API with 30-minute in-memory cache and webhook-driven invalidation on push.
+**Content** — Blog articles (MDX), project metadata, and knowledge files (Markdown) live in a separate GitHub repo. CI compiles articles and uploads the runtime manifests/files to Cloudflare R2. The frontend reads articles and projects from R2; the backend reads articles and knowledge from R2 with cache invalidation from the publish hook. Article AI validates against the R2 manifest, then reads raw MDX from public GitHub for translate/summarize.
 
 **Deployment** — Docker Swarm with Traefik for TLS and path-based routing. Multi-stage Docker builds produce small images running as non-root (UID 1001).
 
