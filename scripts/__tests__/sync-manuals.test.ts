@@ -14,12 +14,17 @@ async function makeRoot(): Promise<string> {
 
 test("syncManuals writes an empty runtime manifest for an empty config", async () => {
   const root = await makeRoot();
-  await writeFile(join(root, "manuals", "manifest.json"), JSON.stringify({ manuals: [] }));
+  await writeFile(
+    join(root, "manuals", "manifest.json"),
+    JSON.stringify({ manuals: [] }),
+  );
 
   const manifest = await syncManuals({ rootDir: root });
 
   assert.deepEqual(manifest, { manuals: [] });
-  const output = JSON.parse(await readFile(join(root, "dist", "manuals", "manifest.json"), "utf-8"));
+  const output = JSON.parse(
+    await readFile(join(root, "dist", "manuals", "manifest.json"), "utf-8"),
+  );
   assert.deepEqual(output, { manuals: [] });
 });
 
@@ -43,7 +48,10 @@ test("syncManuals compiles public wiki pages, links, and assets", async () => {
       "",
     ].join("\n"),
   );
-  await writeFile(join(wiki, "Quick Start.md"), "# Quick Start\n\nBack to [home](Home.md).\n");
+  await writeFile(
+    join(wiki, "Quick Start.md"),
+    "# Quick Start\n\nBack to [home](Home.md).\n",
+  );
   await writeFile(join(wiki, "_Sidebar.md"), "[[Home]]\n");
   await writeFile(join(wiki, "images", "logo.png"), "fake image");
   await writeFile(
@@ -55,7 +63,12 @@ test("syncManuals compiles public wiki pages, links, and assets", async () => {
           title: "Demo",
           description: "Demo manual",
           repo: "owner/demo",
-          order: ["Home", "Quick Start"],
+          sections: [
+            {
+              title: "Introduction",
+              pages: ["Home", "Quick Start"],
+            },
+          ],
         },
       ],
     }),
@@ -73,12 +86,35 @@ test("syncManuals compiles public wiki pages, links, and assets", async () => {
     manifest.manuals[0].pages.map((page) => page.slug),
     ["home", "quick-start"],
   );
+  assert.deepEqual(manifest.manuals[0].sections, [
+    {
+      title: "Introduction",
+      pages: [
+        { slug: "home", title: "Home", sourcePath: "Home.md" },
+        {
+          slug: "quick-start",
+          title: "Quick Start",
+          sourcePath: "Quick Start.md",
+        },
+      ],
+    },
+  ]);
   assert.equal(manifest.manuals[0].updatedAt, "2026-05-11T00:00:00.000Z");
 
-  const home = await readFile(join(root, "dist", "manuals", "demo", "home.mdx"), "utf-8");
+  const home = await readFile(
+    join(root, "dist", "manuals", "demo", "home.mdx"),
+    "utf-8",
+  );
   assert.match(home, /\[Quick\]\(\/manuals\/demo\/quick-start\)/);
   assert.match(home, /__MANUAL_ASSET_BASE__\/images\/logo\.png/);
   assert.match(home, /<pre data-language="typescript"/);
-  assert.ok(existsSync(join(root, "dist", "manuals", "demo", "assets", "images", "logo.png")));
-  assert.equal(existsSync(join(root, "dist", "manuals", "demo", "_Sidebar.mdx")), false);
+  assert.ok(
+    existsSync(
+      join(root, "dist", "manuals", "demo", "assets", "images", "logo.png"),
+    ),
+  );
+  assert.equal(
+    existsSync(join(root, "dist", "manuals", "demo", "_Sidebar.mdx")),
+    false,
+  );
 });

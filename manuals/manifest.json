@@ -1,3 +1,38 @@
 {
-  "manuals": []
+  "manuals": [
+    {
+      "id": "git-vibe",
+      "title": "GitVibe",
+      "description": "Maintainer-gated AI development pipeline for GitHub issues, discussions, labels, workflows, branches, and pull requests.",
+      "repo": "markhuangai/git-vibe",
+      "home": "Home",
+      "sections": [
+        {
+          "title": "Introduction",
+          "pages": ["Home", "Quick Start"]
+        },
+        {
+          "title": "Setup",
+          "pages": ["Setup Requirements", "Configuration"]
+        },
+        {
+          "title": "Using GitVibe",
+          "pages": ["Workflows and Lifecycle", "Commands and Labels"]
+        },
+        {
+          "title": "Technical Reference",
+          "pages": [
+            "Architecture",
+            "AI and Stage Contracts",
+            "Security and Permissions"
+          ]
+        },
+        {
+          "title": "Operations",
+          "pages": ["Development and Testing", "Operations and Troubleshooting"]
+        }
+      ],
+      "tags": ["GitHub Actions", "AI Automation", "Developer Tools"]
+    }
+  ]
 }

@@ -34,7 +34,11 @@ import {
 } from "path";
 import { promisify } from "util";
 import { fileURLToPath } from "url";
-import { createHighlighter, type BundledLanguage, type Highlighter } from "shiki";
+import {
+  createHighlighter,
+  type BundledLanguage,
+  type Highlighter,
+} from "shiki";
 
 const execFile = promisify(execFileCallback);
 
@@ -81,7 +85,13 @@ export interface ManualConfig {
   wikiUrl?: string;
   home?: string;
   order?: string[];
+  sections?: ManualSectionConfig[];
   tags?: string[];
+}
+
+export interface ManualSectionConfig {
+  title: string;
+  pages: string[];
 }
 
 interface ManualsSourceManifest {
@@ -94,6 +104,11 @@ export interface RuntimeManualPage {
   sourcePath: string;
 }
 
+export interface RuntimeManualSection {
+  title: string;
+  pages: RuntimeManualPage[];
+}
+
 export interface RuntimeManual {
   id: string;
   title: string;
@@ -104,6 +119,7 @@ export interface RuntimeManual {
   tags: string[];
   updatedAt: string;
   pages: RuntimeManualPage[];
+  sections?: RuntimeManualSection[];
 }
 
 export interface RuntimeManualsManifest {
@@ -121,7 +137,9 @@ export interface SyncManualsOptions {
   now?: () => string;
 }
 
-export async function syncManuals(options: SyncManualsOptions): Promise<RuntimeManualsManifest> {
+export async function syncManuals(
+  options: SyncManualsOptions,
+): Promise<RuntimeManualsManifest> {
   const rootDir = resolve(options.rootDir);
   const sourceManifest = await readSourceManifest(rootDir);
   const outputDir = join(rootDir, "dist", "manuals");
@@ -147,7 +165,13 @@ export async function syncManuals(options: SyncManualsOptions): Promise<RuntimeM
     for (const manual of sourceManifest.manuals) {
       validateManual(manual);
       const wikiDir = await cloneWiki(manual, tempDir);
-      const runtimeManual = await syncManual(manual, wikiDir, outputDir, highlighter, options.now);
+      const runtimeManual = await syncManual(
+        manual,
+        wikiDir,
+        outputDir,
+        highlighter,
+        options.now,
+      );
       manuals.push(runtimeManual);
       console.log(`  synced ${manual.id}: ${runtimeManual.pages.length} pages`);
     }
@@ -161,9 +185,13 @@ export async function syncManuals(options: SyncManualsOptions): Promise<RuntimeM
   return manifest;
 }
 
-async function readSourceManifest(rootDir: string): Promise<ManualsSourceManifest> {
+async function readSourceManifest(
+  rootDir: string,
+): Promise<ManualsSourceManifest> {
   const manifestPath = join(rootDir, "manuals", "manifest.json");
-  const parsed = JSON.parse(await readFile(manifestPath, "utf-8")) as ManualsSourceManifest;
+  const parsed = JSON.parse(
+    await readFile(manifestPath, "utf-8"),
+  ) as ManualsSourceManifest;
   if (!Array.isArray(parsed.manuals)) {
     throw new Error("manuals/manifest.json must contain a manuals array");
   }
@@ -174,7 +202,10 @@ async function writeRuntimeManifest(
   outputDir: string,
   manifest: RuntimeManualsManifest,
 ): Promise<void> {
-  await writeFile(join(outputDir, "manifest.json"), JSON.stringify(manifest, null, 2));
+  await writeFile(
+    join(outputDir, "manifest.json"),
+    JSON.stringify(manifest, null, 2),
+  );
 }
 
 function validateManual(manual: ManualConfig): void {
@@ -190,9 +221,34 @@ function validateManual(manual: ManualConfig): void {
   if (!REPO_RE.test(manual.repo)) {
     throw new Error(`manual ${manual.id} repo must be owner/repo`);
   }
+  if (manual.sections !== undefined) {
+    if (!Array.isArray(manual.sections)) {
+      throw new Error(`manual ${manual.id} sections must be an array`);
+    }
+    for (const section of manual.sections) {
+      if (!section.title?.trim()) {
+        throw new Error(`manual ${manual.id} has a section without a title`);
+      }
+      if (!Array.isArray(section.pages) || section.pages.length === 0) {
+        throw new Error(
+          `manual ${manual.id} section "${section.title}" must list pages`,
+        );
+      }
+      for (const page of section.pages) {
+        if (typeof page !== "string" || !page.trim()) {
+          throw new Error(
+            `manual ${manual.id} section "${section.title}" has an empty page ref`,
+          );
+        }
+      }
+    }
+  }
 }
 
-async function clonePublicWiki(manual: ManualConfig, tempDir: string): Promise<string> {
+async function clonePublicWiki(
+  manual: ManualConfig,
+  tempDir: string,
+): Promise<string> {
   const targetDir = join(tempDir, manual.id);
   const wikiGitUrl = `https://github.com/${manual.repo}.wiki.git`;
   try {
@@ -221,8 +277,9 @@ async function syncManual(
 
   const drafts = await loadPageDrafts(wikiDir, markdownFiles);
   const pageLookup = buildPageLookup(drafts);
-  const orderedDrafts = orderPages(drafts, manual.order);
-  const homeSlug = resolvePageRef(manual.home ?? "Home", pageLookup) ?? orderedDrafts[0]?.slug;
+  const orderedDrafts = orderPages(drafts, manual.order, manual.sections);
+  const homeSlug =
+    resolvePageRef(manual.home ?? "Home", pageLookup) ?? orderedDrafts[0]?.slug;
 
   if (!homeSlug) {
     throw new Error(`manual ${manual.id} has no home page`);
@@ -236,10 +293,26 @@ async function syncManual(
   }
 
   for (const page of orderedDrafts) {
-    const rewritten = rewriteWikiContent(page.raw, manual.id, page.sourcePath, pageLookup);
+    const rewritten = rewriteWikiContent(
+      page.raw,
+      manual.id,
+      page.sourcePath,
+      pageLookup,
+    );
     const highlighted = highlightCodeBlocks(rewritten, highlighter);
     await writeFile(join(manualOutputDir, `${page.slug}.mdx`), highlighted);
   }
+
+  const runtimePages = orderedDrafts.map(({ slug, title, sourcePath }) => ({
+    slug,
+    title,
+    sourcePath,
+  }));
+  const runtimeSections = buildRuntimeSections(
+    manual.sections,
+    pageLookup,
+    runtimePages,
+  );
 
   return {
     id: manual.id,
@@ -250,11 +323,15 @@ async function syncManual(
     homeSlug,
     tags: manual.tags ?? [],
     updatedAt: now ? now() : await getLastCommitDate(wikiDir),
-    pages: orderedDrafts.map(({ slug, title, sourcePath }) => ({ slug, title, sourcePath })),
+    pages: runtimePages,
+    ...(runtimeSections.length > 0 ? { sections: runtimeSections } : {}),
   };
 }
 
-async function loadPageDrafts(wikiDir: string, markdownFiles: string[]): Promise<PageDraft[]> {
+async function loadPageDrafts(
+  wikiDir: string,
+  markdownFiles: string[],
+): Promise<PageDraft[]> {
   const drafts: PageDraft[] = [];
   const seenSlugs = new Set<string>();
 
@@ -296,12 +373,17 @@ function buildPageLookup(pages: PageDraft[]): Map<string, string> {
   return lookup;
 }
 
-function orderPages(pages: PageDraft[], order: string[] | undefined): PageDraft[] {
+function orderPages(
+  pages: PageDraft[],
+  order: string[] | undefined,
+  sections: ManualSectionConfig[] | undefined,
+): PageDraft[] {
   const bySlug = new Map(pages.map((page) => [page.slug, page]));
   const ordered: PageDraft[] = [];
   const used = new Set<string>();
+  const explicitOrder = order ?? sections?.flatMap((section) => section.pages);
 
-  for (const entry of order ?? []) {
+  for (const entry of explicitOrder ?? []) {
     const slug = slugify(entry);
     const page = bySlug.get(slug);
     if (page && !used.has(page.slug)) {
@@ -317,19 +399,60 @@ function orderPages(pages: PageDraft[], order: string[] | undefined): PageDraft[
   return [...ordered, ...remaining];
 }
 
+function buildRuntimeSections(
+  sections: ManualSectionConfig[] | undefined,
+  pageLookup: Map<string, string>,
+  pages: RuntimeManualPage[],
+): RuntimeManualSection[] {
+  if (!sections) return [];
+
+  const bySlug = new Map(pages.map((page) => [page.slug, page]));
+  const seen = new Set<string>();
+
+  return sections.map((section) => {
+    const sectionPages = section.pages.map((pageRef) => {
+      const slug = resolvePageRef(pageRef, pageLookup);
+      if (!slug) {
+        throw new Error(
+          `manual section "${section.title}" references unknown page: ${pageRef}`,
+        );
+      }
+      if (seen.has(slug)) {
+        throw new Error(`manual page appears in multiple sections: ${pageRef}`);
+      }
+      seen.add(slug);
+      const page = bySlug.get(slug);
+      if (!page) {
+        throw new Error(
+          `manual section "${section.title}" references unordered page: ${pageRef}`,
+        );
+      }
+      return page;
+    });
+
+    return {
+      title: section.title.trim(),
+      pages: sectionPages,
+    };
+  });
+}
+
 function rewriteWikiContent(
   content: string,
   manualId: string,
   sourcePath: string,
   pageLookup: Map<string, string>,
 ): string {
-  const withWikiLinks = content.replace(/\[\[([^\]]+)\]\]/g, (_match, body: string) => {
-    const parts = body.split("|").map((part) => part.trim());
-    const label = parts.length > 1 ? parts[0] : parts[0];
-    const target = parts.length > 1 ? parts[1] : parts[0];
-    const href = manualHref(manualId, target, pageLookup);
-    return href ? `[${label}](${href})` : label;
-  });
+  const withWikiLinks = content.replace(
+    /\[\[([^\]]+)\]\]/g,
+    (_match, body: string) => {
+      const parts = body.split("|").map((part) => part.trim());
+      const label = parts.length > 1 ? parts[0] : parts[0];
+      const target = parts.length > 1 ? parts[1] : parts[0];
+      const href = manualHref(manualId, target, pageLookup);
+      return href ? `[${label}](${href})` : label;
+    },
+  );
 
   const withMarkdownLinks = withWikiLinks.replace(
     /(!?)\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g,
@@ -338,7 +461,9 @@ function rewriteWikiContent(
 
       if (bang) {
         const assetPath = normalizeRelativeAssetPath(target, sourcePath);
-        return assetPath ? `![${label}](${MANUAL_ASSET_BASE}/${encodePath(assetPath)})` : match;
+        return assetPath
+          ? `![${label}](${MANUAL_ASSET_BASE}/${encodePath(assetPath)})`
+          : match;
       }
 
       const href = manualHref(manualId, target, pageLookup);
@@ -351,7 +476,9 @@ function rewriteWikiContent(
     (match, prefix: string, src: string, suffix: string) => {
       if (isExternalOrAnchor(src)) return match;
       const assetPath = normalizeRelativeAssetPath(src, sourcePath);
-      return assetPath ? `${prefix}${MANUAL_ASSET_BASE}/${encodePath(assetPath)}${suffix}` : match;
+      return assetPath
+        ? `${prefix}${MANUAL_ASSET_BASE}/${encodePath(assetPath)}${suffix}`
+        : match;
     },
   );
 }
@@ -366,7 +493,10 @@ function manualHref(
   return slug ? `/manuals/${manualId}/${slug}${hash}` : null;
 }
 
-function resolvePageRef(rawRef: string, pageLookup: Map<string, string>): string | null {
+function resolvePageRef(
+  rawRef: string,
+  pageLookup: Map<string, string>,
+): string | null {
   const { path } = splitHash(rawRef);
   const normalized = path
     .replace(/^\.?\//, "")
@@ -376,7 +506,10 @@ function resolvePageRef(rawRef: string, pageLookup: Map<string, string>): string
   return pageLookup.get(slugify(withoutExt)) ?? null;
 }
 
-function normalizeRelativeAssetPath(rawRef: string, sourcePath: string): string | null {
+function normalizeRelativeAssetPath(
+  rawRef: string,
+  sourcePath: string,
+): string | null {
   const { path } = splitHash(rawRef);
   const cleanPath = path.split("?")[0] ?? path;
   const sourceDir = dirname(toPosix(sourcePath));
@@ -398,32 +531,38 @@ function splitHash(rawRef: string): { path: string; hash: string } {
 }
 
 function highlightCodeBlocks(mdx: string, highlighter: Highlighter): string {
-  return mdx.replace(CODE_BLOCK_RE, (_match, lang: string, meta: string, code: string) => {
-    if (lang === "mermaid") return _match;
+  return mdx.replace(
+    CODE_BLOCK_RE,
+    (_match, lang: string, meta: string, code: string) => {
+      if (lang === "mermaid") return _match;
 
-    const trimmedMeta = meta.trim();
-    const isPlayground = trimmedMeta.includes("playground");
-    const normalizedLang = LANG_ALIASES[lang] ?? lang;
-    const effectiveLang = LANGS.includes(normalizedLang as BundledLanguage)
-      ? normalizedLang
-      : "text";
-    const trimmedCode = code.replace(/\n$/, "");
+      const trimmedMeta = meta.trim();
+      const isPlayground = trimmedMeta.includes("playground");
+      const normalizedLang = LANG_ALIASES[lang] ?? lang;
+      const effectiveLang = LANGS.includes(normalizedLang as BundledLanguage)
+        ? normalizedLang
+        : "text";
+      const trimmedCode = code.replace(/\n$/, "");
 
-    const html = highlighter.codeToHtml(trimmedCode, {
-      lang: effectiveLang,
-      themes: { light: "github-light", dark: "github-dark" },
-      defaultColor: false,
-    });
+      const html = highlighter.codeToHtml(trimmedCode, {
+        lang: effectiveLang,
+        themes: { light: "github-light", dark: "github-dark" },
+        defaultColor: false,
+      });
 
-    let result = html.replace(
-      /^<pre /,
-      `<pre data-language="${effectiveLang}"${isPlayground ? ' data-playground="true"' : ""} `,
-    );
-    if (trimmedMeta) {
-      result = result.replace(/^<pre /, `<pre data-meta="${escapeAttr(trimmedMeta)}" `);
-    }
-    return result;
-  });
+      let result = html.replace(
+        /^<pre /,
+        `<pre data-language="${effectiveLang}"${isPlayground ? ' data-playground="true"' : ""} `,
+      );
+      if (trimmedMeta) {
+        result = result.replace(
+          /^<pre /,
+          `<pre data-meta="${escapeAttr(trimmedMeta)}" `,
+        );
+      }
+      return result;
+    },
+  );
 }
 
 function escapeAttr(s: string): string {
@@ -434,7 +573,11 @@ function escapeAttr(s: string): string {
     .replace(/>/g, "&gt;");
 }
 
-async function copyAsset(wikiDir: string, assetFile: string, manualOutputDir: string): Promise<void> {
+async function copyAsset(
+  wikiDir: string,
+  assetFile: string,
+  manualOutputDir: string,
+): Promise<void> {
   const rel = toPosix(relative(wikiDir, assetFile));
   if (rel.startsWith(".git/")) return;
 
@@ -445,9 +588,13 @@ async function copyAsset(wikiDir: string, assetFile: string, manualOutputDir: st
 
 async function getLastCommitDate(wikiDir: string): Promise<string> {
   try {
-    const { stdout } = await execFile("git", ["-C", wikiDir, "log", "-1", "--format=%cI"], {
-      timeout: 10_000,
-    });
+    const { stdout } = await execFile(
+      "git",
+      ["-C", wikiDir, "log", "-1", "--format=%cI"],
+      {
+        timeout: 10_000,
+      },
+    );
     const date = stdout.trim();
     if (date) return date;
   } catch {
@@ -461,7 +608,8 @@ async function walkFiles(root: string): Promise<string[]> {
   const files: string[] = [];
 
   for (const entry of entries) {
-    if (entry === ".git" || entry === ".DS_Store" || entry.startsWith(".")) continue;
+    if (entry === ".git" || entry === ".DS_Store" || entry.startsWith("."))
+      continue;
     const fullPath = join(root, entry);
     const info = await stat(fullPath);
     if (info.isDirectory()) {
@@ -483,7 +631,9 @@ function isMarkdownFile(file: string): boolean {
 }
 
 function stripMarkdownExt(file: string): string {
-  return MARKDOWN_EXTS.has(extname(file).toLowerCase()) ? file.slice(0, -extname(file).length) : file;
+  return MARKDOWN_EXTS.has(extname(file).toLowerCase())
+    ? file.slice(0, -extname(file).length)
+    : file;
 }
 
 function extractTitle(raw: string): string | null {
@@ -540,7 +690,9 @@ async function main(): Promise<void> {
   console.log(`Synced ${manifest.manuals.length} manuals`);
 }
 
-const isMain = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+const isMain =
+  process.argv[1] &&
+  resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isMain) {
   main().catch((err) => {
     console.error(err);

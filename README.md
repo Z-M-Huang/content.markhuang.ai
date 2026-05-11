@@ -77,7 +77,12 @@ published and points to a public GitHub repository whose wiki is cloned from
       "description": "Vibe Coding Protocol manual.",
       "repo": "Z-M-Huang/vcp",
       "home": "Home",
-      "order": ["Home", "Quick Start"],
+      "sections": [
+        {
+          "title": "Introduction",
+          "pages": ["Home", "Quick Start"]
+        }
+      ],
       "tags": ["Claude Code", "Security"]
     }
   ]
@@ -86,8 +91,10 @@ published and points to a public GitHub repository whose wiki is cloned from
 
 `npm run sync:manuals` writes `dist/manuals/manifest.json`, compiled MDX pages,
 and copied wiki assets. GitHub wiki special pages such as `_Sidebar.md` and
-`_Footer.md` are excluded. Configured wikis are required to clone successfully;
-CI fails rather than publishing an incomplete manual manifest.
+`_Footer.md` are excluded. Use `sections` to group the manual sidebar; the
+compiled runtime manifest still includes a flat `pages` list for routing and
+sitemaps. Configured wikis are required to clone successfully; CI fails rather
+than publishing an incomplete manual manifest.
 
 ## Knowledge Base
 
@@ -103,12 +110,12 @@ Push to main → CI compiles → Upload to R2 → ISR revalidation → Cloudflar
            (dual themes)                   new articles for newsletter
 ```
 
-| Step           | What happens                                                                                                    |
-| -------------- | --------------------------------------------------------------------------------------------------------------- |
-| **Compile**    | `scripts/compile.ts` runs shiki on fenced code blocks (18 languages, dual themes: `github-light`/`github-dark`) |
+| Step           | What happens                                                                                                              |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| **Compile**    | `scripts/compile.ts` runs shiki on fenced code blocks (18 languages, dual themes: `github-light`/`github-dark`)           |
 | **Upload**     | Compiled MDX, article manifest, manual output, project manifest, and knowledge files uploaded to R2 via S3-compatible API |
-| **Revalidate** | `POST /api/v1/hooks/revalidate` triggers Next.js ISR cache refresh                                              |
-| **Newsletter** | `POST /api/v1/hooks/content-published` creates newsletter drafts for new articles                               |
+| **Revalidate** | `POST /api/v1/hooks/revalidate` triggers Next.js ISR cache refresh                                                        |
+| **Newsletter** | `POST /api/v1/hooks/content-published` creates newsletter drafts for new articles                                         |
 
 ### Required GitHub Secrets
 
