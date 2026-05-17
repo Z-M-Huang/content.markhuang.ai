@@ -5,6 +5,8 @@
   "scripts": {
     "compile": "tsx scripts/compile.ts",
     "compile:changed": "tsx scripts/compile.ts --changed",
+    "compile:case-studies": "tsx scripts/compile-case-studies.ts",
+    "compile:case-studies:changed": "tsx scripts/compile-case-studies.ts --changed",
     "sync:manuals": "tsx scripts/sync-manuals.ts",
     "test": "node --import tsx --test scripts/__tests__/*.test.ts"
   },

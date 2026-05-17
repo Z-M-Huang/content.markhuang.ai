@@ -1,6 +1,6 @@
 # content.markhuang.ai
 
-Content repository for [markhuang.ai](https://markhuang.ai). On push to `main`, GitHub Actions compiles MDX articles with shiki syntax highlighting, syncs configured public GitHub wiki manuals, and uploads them to Cloudflare R2. The frontend fetches pre-highlighted content from R2 at ISR time — no backend content proxy, no runtime shiki. The backend Article AI feature reads raw source MDX from the public repo configured by `ARTICLE_AI_SOURCE_REPO` after validating the article against the published R2 manifest.
+Content repository for [markhuang.ai](https://markhuang.ai). On push to `main`, GitHub Actions compiles MDX articles and AI adoption case studies with shiki syntax highlighting, syncs configured public GitHub wiki manuals, and uploads them to Cloudflare R2. The frontend fetches pre-highlighted content from R2 at ISR time — no backend content proxy, no runtime shiki. The backend Article AI feature reads raw source MDX from the public repo configured by `ARTICLE_AI_SOURCE_REPO` after validating the article against the published R2 manifest.
 
 ## Structure
 
@@ -14,12 +14,16 @@ content.markhuang.ai/
 │   └── tutorials/              # Tutorials category
 │       └── *.mdx               # Article content files
 ├── knowledge/                  # AI chat widget knowledge base (*.md)
+├── case-studies/
+│   ├── manifest.json          # Source of truth for AI adoption case studies
+│   └── {slug}.mdx             # Anonymized case-study content files
 ├── projects/
 │   └── manifest.json          # Source of truth for project metadata
 ├── manuals/
 │   └── manifest.json          # Source of truth for public GitHub wiki manuals
 ├── scripts/
 │   ├── compile.ts             # Shiki pre-highlighting + dist/ output
+│   ├── compile-case-studies.ts # Case-study pre-highlighting + dist output
 │   ├── sync-manuals.ts        # GitHub wiki sync + manual manifest output
 │   └── convert-images.sh      # WebP image conversion
 ├── .github/workflows/
@@ -27,6 +31,7 @@ content.markhuang.ai/
 └── dist/                      # Build output (gitignored)
     ├── manifest.json          # Flat array of published entries
     ├── articles/{slug}.mdx    # Pre-highlighted MDX
+    ├── case-studies/          # Runtime case-study manifest and MDX
     └── manuals/               # Runtime manual manifests, pages, and assets
 ```
 
@@ -56,6 +61,47 @@ Article AI translate/summarize uses these raw MDX files directly from the public
 GitHub repo configured by `ARTICLE_AI_SOURCE_REPO` so LLM input does not include
 shiki pre-highlight markup.
 
+## AI Adoption Case Studies
+
+AI adoption case studies are first-class content for `/ai-adoption`, separate
+from blog posts. The MDX file is the source of truth for the case-study body.
+GitHub Discussions are used only for comments through Giscus.
+
+### manifest.json
+
+All case-study metadata lives in `case-studies/manifest.json`.
+
+```json
+{
+  "caseStudies": [
+    {
+      "slug": "example-facility-ai-intake",
+      "title": "Anonymous Facility AI Intake Review",
+      "summary": "A scrubbed real-world AI adoption scenario.",
+      "date": "2026-05-17",
+      "tags": ["ai-adoption", "workflow-design"],
+      "published": true
+    }
+  ]
+}
+```
+
+Each published entry must have a matching `case-studies/{slug}.mdx` file.
+`npm run compile:case-studies` writes `dist/case-studies/manifest.json` and
+`dist/case-studies/{slug}.mdx`. CI uploads them to R2 as:
+
+```text
+case-studies/manifest.json
+case-studies/{slug}.mdx
+```
+
+### Discussion Threads
+
+Case-study comments use Giscus backed by GitHub Discussions in
+`markhuangai/content.markhuang.ai`, category `AI Adoption`. Do not put the
+case-study body in the GitHub Discussion. The website renders MDX from R2 and
+uses the Discussion thread only for reactions and comments.
+
 ## Projects
 
 Project metadata lives in `projects/manifest.json` and is uploaded to R2 as
@@ -75,7 +121,7 @@ published and points to a public GitHub repository whose wiki is cloned from
       "id": "vcp",
       "title": "VCP",
       "description": "Vibe Coding Protocol manual.",
-      "repo": "Z-M-Huang/vcp",
+      "repo": "markhuangai/vcp",
       "home": "Home",
       "sections": [
         {
@@ -112,8 +158,8 @@ Push to main → CI compiles → Upload to R2 → ISR revalidation → Cloudflar
 
 | Step           | What happens                                                                                                              |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| **Compile**    | `scripts/compile.ts` runs shiki on fenced code blocks (18 languages, dual themes: `github-light`/`github-dark`)           |
-| **Upload**     | Compiled MDX, article manifest, manual output, project manifest, and knowledge files uploaded to R2 via S3-compatible API |
+| **Compile**    | `scripts/compile.ts` and `scripts/compile-case-studies.ts` run shiki on fenced code blocks (18 languages, dual themes: `github-light`/`github-dark`) |
+| **Upload**     | Compiled MDX, article manifest, case-study output, manual output, project manifest, and knowledge files uploaded to R2 via S3-compatible API |
 | **Revalidate** | `POST /api/v1/hooks/revalidate` triggers Next.js ISR cache refresh                                                        |
 | **Newsletter** | `POST /api/v1/hooks/content-published` creates newsletter drafts for new articles                                         |
 
@@ -134,6 +180,8 @@ Push to main → CI compiles → Upload to R2 → ISR revalidation → Cloudflar
 npm install                              # install dependencies
 npm run compile                          # compile all published articles to dist/
 npm run compile:changed -- slug1 slug2   # compile specific articles only
+npm run compile:case-studies             # compile all published case studies to dist/case-studies/
+npm run compile:case-studies:changed -- slug1 slug2
 npm run sync:manuals                     # sync configured public GitHub wikis to dist/manuals/
 npm test                                 # run content pipeline tests
 ```
@@ -143,6 +191,13 @@ npm test                                 # run content pipeline tests
 1. Add a new entry to `blog/manifest.json` with all required fields
 2. Create the MDX file at `blog/{category}/{slug}.mdx`
 3. Push to `main` — CI compiles, uploads to R2, and triggers ISR revalidation
+
+## Adding a New AI Adoption Case Study
+
+1. Add a new entry to `case-studies/manifest.json`
+2. Create the MDX file at `case-studies/{slug}.mdx`
+3. Scrub names, locations, timelines, data examples, and identifying details
+4. Push to `main` — CI compiles, uploads to R2, and triggers ISR revalidation
 
 ## MDX Features
 

@@ -18,7 +18,7 @@ import { createHighlighter, type BundledLanguage, type Highlighter } from "shiki
 import { fileURLToPath } from "url";
 
 // Same languages as the old frontend rehypeShikiPlugin
-const LANGS: BundledLanguage[] = [
+export const LANGS: BundledLanguage[] = [
   "go",
   "typescript",
   "javascript",
@@ -66,7 +66,7 @@ const CODE_BLOCK_RE = /^```(\w+)([^\n]*)\n([\s\S]*?)^```$/gm;
  * Replace fenced code blocks with shiki-highlighted HTML.
  * Mermaid blocks are left untouched (frontend renders them client-side).
  */
-function highlightCodeBlocks(mdx: string, highlighter: Highlighter): string {
+export function highlightCodeBlocks(mdx: string, highlighter: Highlighter): string {
   return mdx.replace(CODE_BLOCK_RE, (_match, lang: string, meta: string, code: string) => {
     // Mermaid blocks are rendered client-side — leave as fenced code
     if (lang === "mermaid") {

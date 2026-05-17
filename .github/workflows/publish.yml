@@ -2,8 +2,9 @@
 #
 # Runs on every push to main. Compiles only changed articles for efficiency,
 # but always uploads the full article manifest. Knowledge and projects are uploaded
-# directly from source manifests/files. After R2 upload, triggers revalidation and
-# notifies the backend of newly added articles for auto-newsletter.
+# directly from source manifests/files. Case studies are compiled separately to
+# their own R2 prefix. After R2 upload, triggers revalidation and notifies the
+# backend of newly added articles for auto-newsletter.
 #
 # Required secrets:
 #   CLOUDFLARE_ACCOUNT_ID — Cloudflare account ID
@@ -21,10 +22,12 @@ on:
     branches: [main]
     paths:
       - "blog/**"
+      - "case-studies/**"
       - "knowledge/**"
       - "projects/**"
       - "manuals/**"
       - "scripts/compile.ts"
+      - "scripts/compile-case-studies.ts"
       - "scripts/sync-manuals.ts"
 
 concurrency:
@@ -114,6 +117,38 @@ jobs:
             echo "$CHANGED"
           fi
 
+      - name: Detect case study changes
+        id: case_studies
+        run: |
+          CHANGED=$(git diff --name-only --diff-filter=ACMR HEAD~1 HEAD -- 'case-studies/**' 'scripts/compile-case-studies.ts' 'scripts/compile.ts')
+
+          if [ -z "$CHANGED" ]; then
+            echo "No case study changes detected"
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "has_changes=true" >> "$GITHUB_OUTPUT"
+
+          SLUGS=""
+          while IFS= read -r file; do
+            if [[ "$file" == case-studies/*.mdx ]]; then
+              slug=$(basename "$file" .mdx)
+              SLUGS="$SLUGS $slug"
+            fi
+          done <<< "$CHANGED"
+
+          if [ -z "$SLUGS" ]; then
+            echo "compile_mode=all" >> "$GITHUB_OUTPUT"
+          else
+            echo "compile_mode=changed" >> "$GITHUB_OUTPUT"
+            echo "slugs=$SLUGS" >> "$GITHUB_OUTPUT"
+          fi
+
+          echo "Changed case study files:"
+          echo "$CHANGED"
+          echo "Case study slugs to compile: $SLUGS"
+
       - name: Detect project changes
         id: projects
         run: |
@@ -161,6 +196,18 @@ jobs:
       - name: Sync manuals
         if: steps.manuals.outputs.has_changes == 'true'
         run: npm run sync:manuals
+
+      - name: Compile case studies
+        if: steps.case_studies.outputs.has_changes == 'true'
+        env:
+          COMPILE_MODE: ${{ steps.case_studies.outputs.compile_mode }}
+          SLUGS: ${{ steps.case_studies.outputs.slugs }}
+        run: |
+          if [ "$COMPILE_MODE" = "changed" ]; then
+            npm run compile:case-studies:changed -- $SLUGS
+          else
+            npm run compile:case-studies
+          fi
 
       - name: Upload to R2
         if: steps.changes.outputs.has_changes == 'true'
@@ -212,6 +259,26 @@ jobs:
           npx wrangler r2 object put "${R2_BUCKET_NAME}/projects/manifest.json" \
             --file "projects/manifest.json" --content-type "application/json" --remote
 
+      - name: Upload case studies to R2
+        if: steps.case_studies.outputs.has_changes == 'true'
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+        run: |
+          if [ -d "dist/case-studies" ]; then
+            for file in dist/case-studies/*.mdx; do
+              [ -f "$file" ] || continue
+              npx wrangler r2 object put "${R2_BUCKET_NAME}/case-studies/$(basename "$file")" \
+                --file "$file" --content-type "text/mdx" --remote
+            done
+          fi
+
+          if [ -f "dist/case-studies/manifest.json" ]; then
+            npx wrangler r2 object put "${R2_BUCKET_NAME}/case-studies/manifest.json" \
+              --file "dist/case-studies/manifest.json" --content-type "application/json" --remote
+          fi
+
       - name: Upload manuals to R2
         if: steps.manuals.outputs.has_changes == 'true'
         env:
@@ -246,7 +313,7 @@ jobs:
           fi
 
       - name: Trigger ISR revalidation
-        if: steps.changes.outputs.has_changes == 'true' || steps.projects.outputs.has_changes == 'true' || steps.manuals.outputs.has_changes == 'true'
+        if: steps.changes.outputs.has_changes == 'true' || steps.projects.outputs.has_changes == 'true' || steps.manuals.outputs.has_changes == 'true' || steps.case_studies.outputs.has_changes == 'true'
         env:
           HOOK_TOKEN: ${{ secrets.HOOK_BEARER_TOKEN }}
           SITE_URL: ${{ secrets.SITE_URL }}
